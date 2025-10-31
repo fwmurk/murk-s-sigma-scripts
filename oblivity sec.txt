@@ -1,0 +1,2683 @@
+-- coolboys and kenos horrid src
+
+local a = game:GetService("Players").LocalPlayer
+local function b()
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Bypassing Ac...",
+        Text = "Please wait about 2 seconds",
+        Icon = "rbxassetid://73166572969684",
+        Duration = 5
+    })
+end
+b()
+local c; c = hookmetamethod(game, "__namecall", newcclosure(function(d, ...)
+    local e = {...}
+    local f = getnamecallmethod()
+    if f == "FireServer" and (e[1] == "CheatGuard" or (d.Name == "MainRemoteEvent" and e[1] == "Detection")) then
+        if d.Name == "MainRemoteEvent" then
+            return
+        end
+        return
+    end
+    return c(d, ...)
+end))
+local g; g = hookfunction(task.wait, newcclosure(function(h)
+    local i = getcallingscript()
+    if not checkcaller() and i and i.Name ~= "Animate" and i.Parent and not i.Parent:IsA("Tool") and i.Parent:IsDescendantOf(workspace) then
+        h = 3e9
+    end
+    return g(h)
+end))
+local j = game:HttpGet("https://raw.githubusercontent.com/shakar60/RickWare.CC/refs/heads/main/Misc/Bypasses", true)
+local k = loadstring(j)
+if k then k() end
+task.wait(2)
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService('Debris')
+local Lighting = game:GetService("Lighting")
+local CoreGui = game:GetService("CoreGui")
+local StarterGui = game:GetService("StarterGui")
+local LocalPlayer = Players.LocalPlayer or Players.PlayerAdded:Wait()
+local Camera = Workspace.CurrentCamera
+local Mouse = LocalPlayer:GetMouse()
+
+getgenv().coolboy = {
+    cframetpdesync = false,
+    customcframetpx = 0,
+    customcframetpy = -8.5,
+    customcframetpz = 0,
+    noJumpCooldown = false,
+    noSlow = false,
+    AirshotEnabled = false,
+    AimOffset = 0.04,
+    OriginalAimPart = "HumanoidRootPart",
+    Enabled = true,
+    HorizontalPrediction = 0.1,
+    VerticalPrediction = 0.1,
+    jumpoffset2 = -1,
+    jumpoffset = 0,
+    ResolverEnabled = false,
+    SelectedPart = "HumanoidRootPart",
+    CamlockPart = "Head",
+    CamPredHori = 0.1,
+    CamPredVert = 0.4,
+    AutoPrediction = true,
+    Sway = false,
+    AutoPredMode = "PingBased",
+    ShootDelay = 0.22,
+    NoGroundShot = true,
+    AutoAir = true,
+    ForceFieldCheck = true,
+    LookAt = true,
+    smoothness = 0.3,
+    AimSmoothness = 0.3,
+    TracerEnabled = true,
+    NearestPart = false,
+    speedvalue = 1,
+    MacroSpeed = 0.1,
+    Camera = false,
+    easingStyle = "Sine",
+    easingDirection = "Out",
+    JumpBreak = false,
+    network = false,
+    cframespeedtoggle = false
+}
+
+local coolboy = getgenv().coolboy
+
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+local oldNewIndex
+oldNewIndex = hookmetamethod(game, "__newindex", function(self, key, value)
+    if not checkcaller() and self:IsA("Humanoid") then
+        if coolboy.noJumpCooldown and key == "JumpPower" then
+            return
+        end
+        if coolboy.noSlow and key == "WalkSpeed" and tonumber(value) < 16 then
+            value = 16
+        end
+    end
+    return oldNewIndex(self, key, value)
+end)
+
+local function setWeaponRange(weaponName, enabled)
+    pcall(function()
+        local player = game.Players.LocalPlayer
+        if not player then return end
+
+        local function modifyTool(tool)
+            if not tool then return end
+            local rangeValue = tool:FindFirstChild("Range")
+            
+            if enabled then
+                if rangeValue then
+                    rangeValue.Value = 6e5
+                else
+                    local newRange = Instance.new("NumberValue")
+                    newRange.Name = "Range"
+                    newRange.Value = 4e55
+                    newRange.Parent = tool
+                end
+            else
+                local defaultRange = 25
+                if weaponName == "[Revolver]" then defaultRange = 75 end
+
+                if rangeValue then
+                    rangeValue.Value = defaultRange
+                else
+                    local newRange = Instance.new("NumberValue")
+                    newRange.Name = "Range"
+                    newRange.Value = defaultRange
+                    newRange.Parent = tool
+                end
+            end
+        end
+
+        local backpack = player:FindFirstChild("Backpack")
+        if backpack then
+            local toolInBackpack = backpack:FindFirstChild(weaponName)
+            if toolInBackpack then modifyTool(toolInBackpack) end
+        end
+
+        local character = player.Character
+        if character then
+            local toolInChar = character:FindFirstChild(weaponName)
+            if toolInChar then modifyTool(toolInChar) end
+        end
+    end)
+end
+
+local Plr
+
+coolboy.SilentAim = {
+    Enabled = false,
+    ShowFOV = true,
+    StickyTarget = nil,
+    FOVRadius = 90,
+    FOVColor = Color3.fromRGB(173, 127, 219),
+    TargetPart = "HumanoidRootPart",
+    PredictionFactorX = 0.143,
+    PredictionFactorY = 0.143,
+    PredictionFactorZ = 0.136,
+    StickyKey = Enum.KeyCode.C
+}
+
+coolboy.Target = {
+    main = {
+        enabled = false,
+        prediction = 0.145,
+        aimpart = "HumanoidRootPart",
+        dot_enabled = false
+    }
+}
+
+coolboy.TargetAimbot = {
+    Enabled = true,
+    Keybind = Enum.KeyCode.Q,
+    Autoselect = false,
+
+    Prediction = 0.145,
+    RealPrediction = 0.145,
+    Resolver = false,
+    ResolverType = "Recalculate",
+    JumpOffset = 0.06,
+    RealJumpOffset = 0.09,
+    HitParts = {"HumanoidRootPart"},
+    RealHitPart = "HumanoidRootPart",
+
+    KoCheck = false,
+    LookAt = false,
+
+    CSync = {
+        Enabled = false,
+        Type = "Orbit",
+        Distance = 10,
+        Height = 2,
+        Speed = 10,
+        Circle = true,
+        VisualizeMovement = false,
+        RandomAmount = 10,
+        Color = Color3.fromRGB(255, 255, 255),
+        Spectate = false
+    },
+
+    ViewAt = false,
+    Tracer = true,
+    Highlight = true,
+    HighlightColor1 = Color3.fromRGB(255, 255, 255),
+    HighlightColor2 = Color3.fromRGB(255, 255, 255),
+
+    Stats = false,
+    UseFov = false,
+
+    HitEffect = true,
+    HitEffectType = "Coom",
+    HitEffectColor = Color3.fromRGB(255, 255, 255),
+    HitSounds = true,
+    HitSound = "Bameware",
+
+    HitChams = true,
+    HitSkele = true,
+    SkeleColor = Library and Library.Accent or Color3.new(1,1,1),
+    HitChamsMaterial = Enum.Material.Neon,
+    HitChamsDuration = 1,
+    HitChamsColor = Color3.fromRGB(173, 216, 230),
+
+    NamecallEnabled = false,
+    IndexEnabled = false,
+    LockType = "None"
+}
+
+local connections = {}
+if not LPH_OBFUSCATED then
+    LPH_JIT = function(...) return ... end
+    LPH_JIT_MAX = function(...) return ... end
+    LPH_JIT_ULTRA = function(...) return ... end
+    LPH_NO_VIRTUALIZE = function(...) return ... end
+    LPH_NO_UPVALUES = function(f) return function(...) return f(...) end end
+    LPH_ENCSTR = function(...) return ... end
+    LPH_STRENC = function(...) return ... end
+    LPH_HOOK_FIX = function(...) return ... end
+    LPH_CRASH = function() return print(debug.traceback()) end
+end
+
+local success, libraryContent = pcall(function()
+    return game:HttpGet("https://gist.githubusercontent.com/public-account-7/4098a248a7fcd0ad67e45c75671b409e/raw/50e0d671122a0541276a92f4bf31221dff2f11f9/gistfile1.txt", true)
+end)
+
+if not success or not libraryContent then
+    warn("error couldnt get the ui please create a ticket for support if this happens again.")
+    return
+end
+
+local Library = loadstring(libraryContent)()
+if not Library then
+    warn("error couldnt get the ui please create a ticket for support if this happens again.")
+    return
+end
+
+coolboy.TargetAimbot.SkeleColor = Library.Accent
+
+local originalSettings = { FogColor = Lighting.FogColor, FogStart = Lighting.FogStart, FogEnd = Lighting.FogEnd, Ambient = Lighting.Ambient, Brightness = Lighting.Brightness, ClockTime = Lighting.ClockTime, ExposureCompensation = Lighting.ExposureCompensation, ColorShift_Bottom = Lighting.ColorShift_Bottom, ColorShift_Top = Lighting.ColorShift_Top, GlobalShadows = Lighting.GlobalShadows, OutdoorAmbient = Lighting.OutdoorAmbient, ShadowSoftness = Lighting.ShadowSoftness }
+coolboy.Environment = { Settings = { FogColor = Color3.fromRGB(0, 0, 255), FogStart = 0, FogEnd = 300, FogEnabled = false, Exposure = 0, ClockTime = 1, Ambient = Color3.fromRGB(0, 0, 255), Brightness = 0, WorldEnabled = false, ColorShift_Bottom = Color3.fromRGB(0, 0, 50), ColorShift_Top = Color3.fromRGB(50, 50, 150), GlobalShadows = true, OutdoorAmbient = Color3.fromRGB(60, 60, 100), ShadowSoftness = 0.7 } }
+coolboy.SelfVisuals = {
+    ForcefieldBody = {Enabled = false, Color = Color3.fromRGB(155, 0, 155)}, ForcefieldTools = {Enabled = false, Color = Color3.fromRGB(155, 0, 155)}, ForcefieldHats = {Enabled = false, Color = Color3.fromRGB(155, 0, 155)},
+    Trail = { Enabled = false, InsideColor = Color3.fromRGB(255, 209, 220), OutsideColor = Color3.fromRGB(255, 209, 220), LifeTime = 5, Width = 0.08, trail1 = nil, trail2 = nil }
+}
+
+function fogmaker()
+    if coolboy.Environment.Settings.FogEnabled then
+        Lighting.FogColor, Lighting.FogStart, Lighting.FogEnd = coolboy.Environment.Settings.FogColor, coolboy.Environment.Settings.FogStart, coolboy.Environment.Settings.FogEnd
+    else
+        Lighting.FogColor, Lighting.FogStart, Lighting.FogEnd = originalSettings.FogColor, originalSettings.FogStart, originalSettings.FogEnd
+    end
+end
+
+function UpdateWorld()
+    if coolboy.Environment.Settings.WorldEnabled then
+        Lighting.Ambient, Lighting.Brightness, Lighting.ClockTime, Lighting.ExposureCompensation, Lighting.ColorShift_Bottom, Lighting.ColorShift_Top, Lighting.GlobalShadows, Lighting.OutdoorAmbient, Lighting.ShadowSoftness = coolboy.Environment.Settings.Ambient, coolboy.Environment.Settings.Brightness, coolboy.Environment.Settings.ClockTime, coolboy.Environment.Settings.Exposure, coolboy.Environment.Settings.ColorShift_Bottom, coolboy.Environment.Settings.ColorShift_Top, coolboy.Environment.Settings.GlobalShadows, coolboy.Environment.Settings.OutdoorAmbient, coolboy.Environment.Settings.ShadowSoftness
+    else
+        Lighting.Ambient, Lighting.Brightness, Lighting.ClockTime, Lighting.ExposureCompensation, Lighting.ColorShift_Bottom, Lighting.ColorShift_Top, Lighting.GlobalShadows, Lighting.OutdoorAmbient, Lighting.ShadowSoftness = originalSettings.Ambient, originalSettings.Brightness, originalSettings.ClockTime, originalSettings.ExposureCompensation, originalSettings.ColorShift_Bottom, originalSettings.ColorShift_Top, originalSettings.GlobalShadows, originalSettings.OutdoorAmbient, originalSettings.ShadowSoftness
+    end
+end
+
+function applyForcefieldToParts(parts, isEnabled, color)
+    for _, part in pairs(parts) do
+        if part:IsA("BasePart") then
+            part.Material = isEnabled and Enum.Material.ForceField or Enum.Material.Plastic
+            if isEnabled then part.Color = color end
+        end
+    end
+end
+
+function applyForcefieldToBody()
+    if LocalPlayer.Character then applyForcefieldToParts(LocalPlayer.Character:GetChildren(), coolboy.SelfVisuals.ForcefieldBody.Enabled, coolboy.SelfVisuals.ForcefieldBody.Color) end
+end
+
+function applyForcefieldToHats()
+    if LocalPlayer.Character then
+        for _, accessory in pairs(LocalPlayer.Character:GetChildren()) do
+            if accessory:IsA("Accessory") then applyForcefieldToParts(accessory:GetChildren(), coolboy.SelfVisuals.ForcefieldHats.Enabled, coolboy.SelfVisuals.ForcefieldHats.Color) end
+        end
+    end
+end
+
+function update_trail()
+    if coolboy.SelfVisuals.Trail.Enabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+        if not coolboy.SelfVisuals.Trail.trail1 or not coolboy.SelfVisuals.Trail.trail1.Parent then
+            local HRP = LocalPlayer.Character.HumanoidRootPart
+            local att0, att1 = Instance.new("Attachment", HRP), Instance.new("Attachment", HRP)
+            coolboy.SelfVisuals.Trail.trail1, coolboy.SelfVisuals.Trail.trail2 = Instance.new("Trail", HRP), Instance.new("Trail", HRP)
+            coolboy.SelfVisuals.Trail.trail1.Attachment0, coolboy.SelfVisuals.Trail.trail2.Attachment0 = att0, att0
+            coolboy.SelfVisuals.Trail.trail1.Attachment1, coolboy.SelfVisuals.Trail.trail2.Attachment1 = att1, att1
+            att0.Position, att1.Position = Vector3.new(0.7, 0, 0), Vector3.new(-0.7, 0, 0)
+        end
+        coolboy.SelfVisuals.Trail.trail1.Color = ColorSequence.new(coolboy.SelfVisuals.Trail.InsideColor)
+        coolboy.SelfVisuals.Trail.trail2.Color = ColorSequence.new(coolboy.SelfVisuals.Trail.OutsideColor)
+        coolboy.SelfVisuals.Trail.trail1.Lifetime = coolboy.SelfVisuals.Trail.LifeTime
+        coolboy.SelfVisuals.Trail.trail2.Lifetime = coolboy.SelfVisuals.Trail.LifeTime
+        coolboy.SelfVisuals.Trail.trail1.WidthScale = NumberSequence.new(coolboy.SelfVisuals.Trail.Width)
+        coolboy.SelfVisuals.Trail.trail2.WidthScale = NumberSequence.new(coolboy.SelfVisuals.Trail.Width)
+    elseif not coolboy.SelfVisuals.Trail.Enabled then
+        if coolboy.SelfVisuals.Trail.trail1 then coolboy.SelfVisuals.Trail.trail1:Destroy() end
+        if coolboy.SelfVisuals.Trail.trail2 then coolboy.SelfVisuals.Trail.trail2:Destroy() end
+    end
+end
+
+function onCharacterAdded_Visuals(character)
+    character:WaitForChild("HumanoidRootPart")
+    applyForcefieldToBody()
+    applyForcefieldToHats()
+    update_trail()
+end
+
+if LocalPlayer.Character then
+    onCharacterAdded_Visuals(LocalPlayer.Character)
+end
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded_Visuals)
+
+local RapidFireEnabled = false
+local modifiedTools = {}
+
+local function rapidfire(tool)
+    if not RapidFireEnabled then return end
+    if not tool or not tool:FindFirstChild("GunScript") or modifiedTools[tool] then return end
+
+    for _, v in ipairs(getconnections(tool.Activated)) do
+        local funcinfo = debug.getinfo(v.Function)
+        for i = 1, funcinfo.nups do
+            local c, n = debug.getupvalue(v.Function, i)
+            if type(c) == "number" then
+                debug.setupvalue(v.Function, i, 0.0000000000001)
+            end
+        end
+    end
+
+    modifiedTools[tool] = true
+end
+
+local function onCharacterAdded_RapidFire(character)
+    for _, tool in ipairs(character:GetChildren()) do
+        if tool:IsA("Tool") and tool:FindFirstChild("Handle") then
+            rapidfire(tool)
+        end
+    end
+
+    character.ChildAdded:Connect(function(child)
+        if child:IsA("Tool") and child:FindFirstChild("Handle") then
+            rapidfire(child)
+        end
+    end)
+end
+
+if LocalPlayer.Character then
+    onCharacterAdded_RapidFire(LocalPlayer.Character)
+end
+
+LocalPlayer.CharacterAdded:Connect(onCharacterAdded_RapidFire)
+
+local size = 10
+local hitboxExpanderEnabled = false
+local Client = game.Players.LocalPlayer
+
+local function resetCharacter(Character)
+    if not Character then return end
+    local HRP = Character:FindFirstChild("HumanoidRootPart")
+    if HRP and HRP:GetAttribute("hitboxexpanderhb") then
+        HRP.Size = Vector3.new(size, size, size)
+        HRP.Transparency = 1
+        HRP.CanCollide = true
+        HRP:SetAttribute("hitboxexpanderhb", nil)
+    end
+end
+
+local function handleCharacter(Character)
+    if not Character or not hitboxExpanderEnabled then
+        resetCharacter(Character)
+        return
+    end
+    local HRP = Character:FindFirstChild("HumanoidRootPart") or Character:WaitForChild("HumanoidRootPart", 5)
+    if not HRP then return end
+
+    HRP.Size = Vector3.new(size, size, size)
+    HRP.Transparency = 1
+    HRP.CanCollide = false
+    HRP:SetAttribute("hitboxexpanderhb", true)
+end
+
+local function handlePlayer(Player)
+    if Player == Client then return end
+    Player.CharacterAdded:Connect(function(Character)
+        Character:WaitForChild("HumanoidRootPart")
+        handleCharacter(Character)
+    end)
+    if Player.Character then
+        handleCharacter(Player.Character)
+    end
+end
+
+for _, Player in pairs(Players:GetPlayers()) do
+    handlePlayer(Player)
+end
+
+Players.PlayerAdded:Connect(handlePlayer)
+Players.PlayerRemoving:Connect(function(Player)
+    if Player.Character then
+        resetCharacter(Player.Character)
+    end
+end)
+
+RunService.Heartbeat:Connect(function()
+    if not hitboxExpanderEnabled then
+        for _, Player in pairs(Players:GetPlayers()) do
+            if Player ~= Client and Player.Character then
+                resetCharacter(Player.Character)
+            end
+        end
+        return
+    end
+    for _, Player in pairs(Players:GetPlayers()) do
+        if Player ~= Client and Player.Character then
+            handleCharacter(Player.Character)
+        end
+    end
+end)
+
+local function GetBullet()
+    if workspace:FindFirstChild("Ignored") and workspace.Ignored:FindFirstChild("Siren") and workspace.Ignored.Siren:FindFirstChild("Radius") then
+        return {
+            BulletPath = workspace.Ignored.Siren.Radius,
+            BulletName = "BULLET_RAYS",
+            BulletBeamName = "GunBeam"
+        }
+    elseif workspace:FindFirstChild("Ignored") then
+        return {
+            BulletPath = workspace.Ignored,
+            BulletName = "BULLET_RAYS",
+            BulletBeamName = "GunBeam"
+        }
+    elseif workspace then
+        return {
+            BulletPath = workspace,
+            BulletName = "Part",
+            BulletBeamName = "gb"
+        }
+    end
+    return nil
+end
+
+local support = GetBullet()
+local bullet_beam_name, bullet_name, bullet_path
+
+if support then
+    bullet_beam_name = support.BulletBeamName
+    bullet_name = support.BulletName
+    bullet_path = support.BulletPath
+else
+    warn("warning couldnt find a bullet path or name.")
+end
+
+local MainColor = Library.Accent
+
+coolboy.BulletVisuals = {
+    Visuals = {
+        Bullet_Trails = {
+            Enabled = false,
+            Width = 1.7,
+            Duration = 5,
+            Fade = false,
+            FadeDuration = 5,
+            Color = MainColor,
+            Texture = "Normal"
+        }
+    }
+}
+
+local utility = {}
+do
+    utility.world_to_screen = LPH_NO_VIRTUALIZE(function(position)
+        local screen_position, on_screen = Camera:WorldToViewportPoint(position)
+        return {position = Vector2.new(screen_position.X, screen_position.Y), on_screen = on_screen}
+    end)
+    utility.instance_new = function(type, properties)
+        local instance = Instance.new(type)
+        for property, value in pairs(properties) do
+            instance[property] = value
+        end
+        return instance
+    end
+    utility.has_character = LPH_NO_VIRTUALIZE(function(player)
+        return (player and player.Character and player.Character:FindFirstChild("Humanoid")) and true or false
+    end)
+    utility.new_connection = function(type, callback)
+        local connection = type:Connect(callback)
+        table.insert(connections, connection)
+        return connection
+    end
+    utility.create_beam = LPH_NO_VIRTUALIZE(function(from, to, color_1, color_2, duration, fade_enabled, fade_duration)
+        local tween
+        local total_time = 0
+        local main_part = utility.instance_new("Part", {Parent = workspace, Size = Vector3.new(), Massless = true, Transparency = 1, CanCollide = false, Position = from, Anchored = true})
+        local part0 = utility.instance_new("Part", {Parent = main_part, Size = Vector3.new(), Massless = true, Transparency = 1, CanCollide = false, Position = from, Anchored = true})
+        local part1 = utility.instance_new("Part", {Parent = main_part, Size = Vector3.new(), Massless = true, Transparency = 1, CanCollide = false, Position = to, Anchored = true})
+        local attachment0 = utility.instance_new("Attachment", {Parent = part0})
+        local attachment1 = utility.instance_new("Attachment", {Parent = part1})
+        local beam = utility.instance_new("Beam", {
+            Texture = "rbxassetid://446111271",
+            TextureMode = Enum.TextureMode.Wrap,
+            TextureLength = 10,
+            LightEmission = 1,
+            LightInfluence = 1,
+            FaceCamera = true,
+            ZOffset = -1,
+            Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0, 0), NumberSequenceKeypoint.new(1, 1)}),
+            Color = ColorSequence.new({ColorSequenceKeypoint.new(0, color_1), ColorSequenceKeypoint.new(1, color_2)}),
+            Attachment0 = attachment0,
+            Attachment1 = attachment1,
+            Enabled = true,
+            Parent = main_part
+        })
+        if fade_enabled then
+            tween = utility.new_connection(RunService.Heartbeat, function(delta_time)
+                total_time += delta_time
+                beam.Transparency = NumberSequence.new(TweenService:GetValue((total_time / fade_duration), Enum.EasingStyle.Quad, Enum.EasingDirection.In))
+            end)
+        end
+        task.delay(duration, function()
+            main_part:Destroy()
+            if tween then
+                tween:Disconnect()
+            end
+        end)
+    end)
+end
+
+utility.new_connection(RunService.RenderStepped, function()
+    if coolboy.Camera and coolboy.Target.main.enabled and Plr and Plr.Character then
+        local targetPart = Plr.Character:FindFirstChild(coolboy.CamlockPart)
+        if targetPart and targetPart:IsA("BasePart") then
+            local predictionH = coolboy.CamPredHori or 0.134
+            local targetVelocity = Plr.Character:FindFirstChild("HumanoidRootPart") and Plr.Character.HumanoidRootPart.Velocity or Vector3.new()
+            local predictedPosition = targetPart.Position + (targetVelocity * predictionH)
+
+            local camlockPosition = CFrame.new(Camera.CFrame.Position, predictedPosition)
+            local aimSmoothness = coolboy.AimSmoothness or 0.3
+            Camera.CFrame = Camera.CFrame:Lerp(camlockPosition, aimSmoothness)
+        end
+    end
+
+    if coolboy.AutoAir and coolboy.Target.main.enabled and Plr and Plr.Character then
+        local targetRoot = Plr.Character:FindFirstChild("HumanoidRootPart")
+        if targetRoot and targetRoot.Velocity.Y > 15 then
+            local localChar = LocalPlayer.Character
+            if localChar then
+                local tool = localChar:FindFirstChildOfClass("Tool")
+                if tool then
+                    tool:Activate()
+                end
+            end
+        end
+    end
+
+    local localChar = LocalPlayer.Character
+    if not (localChar and localChar:FindFirstChild("Humanoid") and localChar:FindFirstChild("HumanoidRootPart")) then return end
+
+    if coolboy.Target.main.enabled and Plr and Plr.Character and Plr.Character:FindFirstChild("HumanoidRootPart") and coolboy.LookAt then
+        if localChar.Humanoid.AutoRotate then localChar.Humanoid.AutoRotate = false end
+        local targetRoot = Plr.Character.HumanoidRootPart
+        local localRoot = localChar.HumanoidRootPart
+        localRoot.CFrame = CFrame.new(
+            localRoot.Position,
+            Vector3.new(targetRoot.Position.X, localRoot.Position.Y, targetRoot.Position.Z)
+        )
+    else
+        if not localChar.Humanoid.AutoRotate then localChar.Humanoid.AutoRotate = true end
+    end
+    
+    if coolboy.AirshotEnabled and coolboy.Target.main.enabled and Plr and Plr.Character and Plr.Character:FindFirstChild("Humanoid") then
+        local humanoid = Plr.Character.Humanoid
+        local state = humanoid:GetState()
+        if state == Enum.HumanoidStateType.Freefall or state == Enum.HumanoidStateType.Jumping then
+            coolboy.Target.main.aimpart = "RightFoot"
+        else
+            if coolboy.Target.main.aimpart == "RightFoot" then
+                coolboy.Target.main.aimpart = coolboy.OriginalAimPart or "HumanoidRootPart"
+            end
+        end
+    else
+        if coolboy.Target.main.aimpart == "RightFoot" and coolboy.OriginalAimPart then
+            coolboy.Target.main.aimpart = coolboy.OriginalAimPart
+        end
+    end
+end)
+
+utility.new_connection(RunService.Stepped, function()
+    local localChar = LocalPlayer.Character
+    if not (localChar and localChar:FindFirstChild("Humanoid")) then return end
+
+    if coolboy.Target.main.enabled and Plr and Plr.Character and Plr.Character:FindFirstChild("Humanoid") and coolboy.TargetAimbot.CSync.Spectate then
+        if Camera.CameraSubject ~= Plr.Character.Humanoid then
+            Camera.CameraSubject = Plr.Character.Humanoid
+        end
+    else
+        if Camera.CameraSubject ~= localChar.Humanoid then
+            Camera.CameraSubject = localChar.Humanoid
+        end
+    end
+end)
+
+local function SirenAdded(Obj)
+    local Character = LocalPlayer.Character
+    if not (Character and Character:FindFirstChild("HumanoidRootPart")) then return end
+    local RootPart = Character.HumanoidRootPart
+
+    local function VerifyBullet(obj)
+        return (obj.Name == bullet_name or obj:FindFirstChild("Attachment") or obj:FindFirstChild(bullet_beam_name)) and obj
+    end
+
+    local BulletRay = VerifyBullet(Obj)
+    if BulletRay then
+        local Mag = (RootPart.Position - BulletRay.Position).Magnitude
+        if Mag <= 13 then
+            local GunBeam = BulletRay:WaitForChild(bullet_beam_name)
+            local Attachment1 = GunBeam.Attachment1
+            if coolboy.BulletVisuals.Visuals.Bullet_Trails.Enabled then
+                GunBeam:Destroy()
+                utility.create_beam(
+                    BulletRay.Position,
+                    Attachment1.WorldCFrame.Position,
+                    coolboy.BulletVisuals.Visuals.Bullet_Trails.Color,
+                    coolboy.BulletVisuals.Visuals.Bullet_Trails.Color,
+                    coolboy.BulletVisuals.Visuals.Bullet_Trails.Duration,
+                    coolboy.BulletVisuals.Visuals.Bullet_Trails.Fade,
+                    coolboy.BulletVisuals.Visuals.Bullet_Trails.FadeDuration
+                )
+            end
+        end
+    end
+end
+
+if bullet_path then
+    bullet_path.ChildAdded:Connect(SirenAdded)
+end
+
+coolboy.Functions = {}
+coolboy.Folders = {}
+coolboy.Parts = {}
+coolboy.Locals = {
+    Target = nil,
+    Targeting = false,
+    Resolver = {OldTick = tick(), OldPos = Vector3.new(), ResolvedVelocity = Vector3.new()},
+    AutoSelectTick = tick(),
+    AntiAimViewer = {MouseRemoteFound = false, MouseRemote = nil, MouseRemoteArgs = nil, MouseRemotePositionIndex = nil},
+    GunTP = {Enabled = false, Anchor = false, Offset = {0,-1,0}},
+    Aura = {Enabled = true, Color = Color3.fromRGB(0,0,67)},
+    RocketTP = {Enabled = false},
+    GrenadeTP = {Enabled = false},
+    KnifeAbilityTest = {TargetPart = "HumanoidRootPart", Radius = 90, Visible = false},
+    HitEffect = {["Nova Impact"] = nil, ["Crescent Slash"] = nil, ["Coom"] = nil, ["Cosmic Explosion"] = nil, ["Slash"] = nil, ["Atomic Slash"] = nil},
+    Gun = {PreviousGun = nil, PreviousAmmo = 999, Shotguns = {"[Double-Barrel SG]", "[TacticalShotgun]", "[Shotgun]"}},
+    PlayerHealth = {},
+    JumpOffset = 0,
+    BulletPath = {
+        [4312377180] = Workspace:FindFirstChild("MAP") and Workspace.MAP:FindFirstChild("Ignored") or nil,
+        [1008451066] = Workspace:FindFirstChild("Ignored") and Workspace.Ignored:FindFirstChild("Siren") and Workspace.Ignored.Siren:FindFirstChild("Radius") or nil,
+        [3985694250] = Workspace and Workspace:FindFirstChild("Ignored") or nil,
+        [5106782457] = Workspace and Workspace:FindFirstChild("Ignored") or nil,
+        [4937639028] = Workspace and Workspace:FindFirstChild("Ignored") or nil,
+        [1958807588] = Workspace and Workspace:FindFirstChild("Ignored") or nil
+    },
+    SavedCFrame = nil,
+    NetworkPreviousTick = tick(),
+    NetworkShouldSleep = false,
+    FFlags = {},
+    OriginalVelocity = {},
+    RotationAngle = 0
+}
+coolboy.Utility = {Drawings = {}, EspCache = {}}
+coolboy.Connections = {GunConnections = {}}
+coolboy.AuraIgnoreFolder = Instance.new("Folder", game:GetService("Workspace"))
+
+coolboy.MainSettings = {
+    Combat = {
+        Enabled = false, Skibidi = true, Spectate = true, AimPart = "HumanoidRootPart", ESP = true, Silent = false, BetaAirshot = false,
+        TriggerBot = {Enabled = false, Delay = 0, TargeyOnly = false, FOV = {Show = true, Size = 80}},
+        TargetInfo = false, Camera = false, EasingStyle = "Sine", EasingDirection = "Out", Alerts = true, LookAt = false,
+        Spectate = false, PingBased = false, UseIndex = false, AntiAimViewer = false,
+        AutoSelect = {Enabled = false, Cooldown = {Enabled = false, Amount = 0.5}},
+        Checks = {Enabled = false, Knocked = false, Crew = false, Wall = false, Grabbed = false, Vehicle = false},
+        Smoothing = {Horizontal = 1, Vertical = 1},
+        Prediction = {Horizontal = 0.134, Vertical = 0.134},
+        Resolver = {Enabled = false, RefreshRate = 190},
+        Fov = {Visualize = {Enabled = false, Color = Color3.new(1, 1, 1)}, Radius = 80},
+        Visuals = {
+            Enabled = true,
+            Tracer = {Enabled = false, Color = Color3.new(1, 1, 1), Thickness = 2},
+            Dot = {Enabled = false, Color = Color3.new(1, 1, 1), Filled = true, Size = 6},
+            Chams = {Enabled = false, Fill = {Color = Color3.fromRGB(255,209,220), Transparency = 0.5}, Outline = {Color = Color3.new(255,255,255), Transparency = 0}}
+        },
+        Air = {Enabled = true, AirAimPart = {Enabled = false, HitPart = "LowerTorso"}, JumpOffset = {Enabled = false, Offset = 0}}
+    },
+    Visuals = {
+        Backtrack = {Enabled = true, Color = Color3.fromRGB(255,255,255), Method = "Folllow", Transparency = 0.5, Material = "Plastic"},
+        BulletTracers = {Enabled = false, Color = {Gradient1 = Color3.new(1, 1, 1), Gradient2 = Color3.new(0, 0, 0)}, Duration = 1, Fade = {Enabled = false, Duration = 0.5}},
+        BulletImpacts = {Enabled = false, Color = Color3.new(1, 1, 1), Duration = 1, Size = 1, Material = "SmoothPlastic", Fade = {Enabled = false, Duration = 0.5}},
+        OnHit = {
+            Enabled = false,
+            Effect = {Enabled = false, Color = Color3.new(1, 1, 1)},
+            Sound = {Enabled = false, Volume = 5, Value = "hentai4.wav"},
+            Chams = {Enabled = false, Color = Color3.fromRGB(255,209,220), Material = "ForceField", Duration = 1}
+        },
+        World = {
+            Enabled = false,
+            Fog = {Enabled = false, Color = Color3.fromRGB(255,209,220), End = 1000, Start = 10000},
+            Ambient = {Enabled = false, Color = Color3.fromRGB(255,209,220)},
+            Brightness = {Enabled = false, Value = 0},
+            ClockTime = {Enabled = false, Value = 24},
+            WorldExposure = {Enabled = false, Value = -0.1}
+        },
+        Crosshair = {Enabled = false, StickToTarget = false, Color = Color3.new(1, 1, 1), Size = 10, Gap = 2, Rotation = {Enabled = false, Speed = 1}}
+    },
+    AntiAim = {
+        DaCoolBoyDesync = false, DaCoolBoyDesync2 = false, DaCoolBoyDesync3 = false,
+        VelocitySpoofer = {Enabled = false, Visualize = {Enabled = false, Color = Color3.fromRGB(255,209,220), Prediction = 0.134}, Type = "Underground", Roll = 0, Pitch = 0, Yaw = 0},
+        CSync = {Enabled = false, Spoof = false, Type = "Target Strafe", Visualize = {Enabled = false, Color = Color3.fromRGB(255,209,220)}, RandomDistance = 10, Custom = {X=0,Y=0,Z=0}, TargetStrafe = {Speed=1,Distance=1,Height=1}},
+        Network = {Enabled = false, WalkingCheck = false, Amount = 0.05},
+        VelocityDesync = {Enabled = false, Range = 1},
+        FFlagDesync = {Enabled = false, SetNew = false, FFlags = {"S2PhysicsSenderRate"}, SetNewAmount = 1, Amount = 1}
+    },
+    Misc = {
+        Movement = {Macro = {Enabled = false, Speed = 0.1}, Speed = {Enabled = false, Amount = 1}},
+        Exploits = {Enabled = false, NoRecoil = false, NoJumpCooldown = false, NoSlowDown = false}
+    }
+}
+
+getgenv().Desync = false
+getgenv().AntiLockType = "Behind"
+getgenv().Direction = Vector3.new(0, 0, -1)
+
+coolboy.Functions.VisualizeMovement = function()
+    local playerCharacter = LocalPlayer.Character
+    if coolboy.MainSettings.Combat.Skibidi and playerCharacter and playerCharacter:FindFirstChild("HumanoidRootPart") then
+        local RootPart = playerCharacter.HumanoidRootPart
+        local Ball = Instance.new('Part')
+        Ball.Anchored = true
+        Ball.Size = Vector3.new(0.5, 0.5, 0.5)
+        Ball.Transparency = -0.5
+        Ball.Shape = Enum.PartType.Ball
+        Ball.Color = Color3.fromRGB(255,209,220)
+        Ball.Material = Enum.Material.ForceField
+        Ball.Parent = Workspace
+        Ball.CFrame = RootPart.CFrame
+        Ball.CanCollide = false
+        local highlight = Instance.new("Highlight", Ball)
+        highlight.Adornee = Ball
+        highlight.FillColor = Color3.fromRGB(255,209,220)
+        highlight.OutlineColor = Color3.fromRGB(255,255,255)
+        Debris:AddItem(Ball, 2)
+    end
+end
+coolboy.Functions.VisualizeMovement()
+
+print("OpenAc Flagged & Bypassed!, Loading coolboy!")
+
+local hitsounds = {
+    ["RIFK7"] = "rbxassetid://9102080552", ["Bubble"] = "rbxassetid://9102092728", ["Minecraft"] = "rbxassetid://5869422451",
+    ["Cod"] = "rbxassetid://160432334", ["Bameware"] = "rbxassetid://6565367558", ["Neverlose"] = "rbxassetid://6565370984",
+    ["Gamesense"] = "rbxassetid://4817809188", ["Rust"] = "rbxassetid://6565371338", ["BlackPencil"] = "https://github.com/Shatapmatehabibi/Hitsounds/raw/main/bananapencil.mp3.mp3",
+    ["Fein"] = "https://github.com/CongoOhioDog/SoundS/blob/main/psalms%20highly%20defined%20fein.mp3?raw=true",
+    ["Unicorn"] = "https://github.com/CongoOhioDog/SoundS/blob/main/shiny%20unicorn%20for%20dh%20_%20psalms.mp3?raw=true",
+    ["Kitty"] = "https://github.com/CongoOhioDog/SoundS/blob/main/Kitty.mp3?raw=true",
+    ["Bird"] = "https://github.com/CongoOhioDog/SoundS/blob/main/bird%20chirping%20for%20DH%20_%20psalms%20audio.mp3?raw=true",
+    ["BirthdayCake"] = "https://github.com/CongoOhioDog/SoundS/blob/main/Birthday%20cake%20for%20dh%20_%20psalms.mp3?raw=true",
+    ["KenCarson"] = "https://github.com/CongoOhioDog/SoundS/blob/main/ken_carson_-_jennifer_s_body_offici(2).mp3?raw=true"
+}
+
+local Highlight = false
+
+coolboy.ESP = {
+    Enabled = false,
+    TeamCheck = false,
+    MaxDistance = 200,
+    FontSize = 11,
+    FadeOut = { OnDistance = true, OnDeath = false, OnLeave = false },
+    Options = { Teamcheck = false, TeamcheckRGB = Color3.fromRGB(0, 255, 0), Friendcheck = true, FriendcheckRGB = Color3.fromRGB(0, 255, 0), Highlight = false, HighlightRGB = Color3.fromRGB(255, 0, 0) },
+    Drawing = {
+        Chams = { Enabled = false, Thermal = true, FillRGB = Color3.fromRGB(119, 120, 255), Fill_Transparency = 1, OutlineRGB = Color3.fromRGB(119, 120, 255), Outline_Transparency = 1, VisibleCheck = true },
+        Names = { Enabled = false, RGB = Color3.fromRGB(255, 255, 255) },
+        Flags = { Enabled = false },
+        Distances = { Enabled = false, Position = "Text", RGB = Color3.fromRGB(255, 255, 255) },
+        Weapons = { Enabled = false, WeaponTextRGB = Color3.fromRGB(119, 120, 255), Outlined = false, Gradient = false, GradientRGB1 = Color3.fromRGB(255, 255, 255), GradientRGB2 = Color3.fromRGB(119, 120, 255) },
+        Boxes = { Animate = false, RotationSpeed = 300, Gradient = false, GradientRGB1 = Color3.fromRGB(119, 120, 255), GradientRGB2 = Color3.fromRGB(0, 0, 0), GradientFill = true, GradientFillRGB1 = Color3.fromRGB(119, 120, 255), GradientFillRGB2 = Color3.fromRGB(0, 0, 0), Filled = { Enabled = true, Transparency = 0.75, RGB = Color3.fromRGB(0, 0, 0) }, Full = { Enabled = false, RGB = Color3.fromRGB(255, 255, 255) }, Corner = { Enabled = false, RGB = Color3.fromRGB(255, 255, 255) } }
+    },
+    BarLayout = {
+        ['health'] = { enabled = false, position = 'left', order = 1, color_empty = Color3.fromRGB(176, 84, 84), color_full = Color3.fromRGB(140, 250, 140) },
+        ['armor'] = { enabled = false, position = 'right', order = 2, color_empty = Color3.fromRGB(58, 58, 97), color_full = Color3.fromRGB(72, 72, 250) }
+    },
+    Connections = { RunService = RunService },
+    Fonts = {}
+}
+
+do
+    local ESP_CONFIG = coolboy.ESP
+    local Euphoria = ESP_CONFIG.Connections
+    local lplayer = Players.LocalPlayer
+    local camera = Workspace.CurrentCamera
+    local Functions = {}
+
+    function Functions:Create(Class, Properties)
+        local _Instance = typeof(Class) == 'string' and Instance.new(Class) or Class
+        for Property, Value in pairs(Properties) do _Instance[Property] = Value end
+        return _Instance
+    end
+
+    function Functions:FadeOutOnDist(element, distance)
+        local transparency = math.max(0.1, 1 - (distance / ESP_CONFIG.MaxDistance))
+        if element:IsA("TextLabel") then element.TextTransparency = 1 - transparency
+        elseif element:IsA("ImageLabel") then element.ImageTransparency = 1 - transparency
+        elseif element:IsA("UIStroke") then element.Transparency = 1 - transparency
+        elseif element:IsA("Frame") then element.BackgroundTransparency = 1 - transparency
+        elseif element:IsA("Highlight") then element.FillTransparency = 1 - transparency; element.OutlineTransparency = 1 - transparency
+        end
+    end
+
+    function Functions:GetPlayerStats(character)
+        local health, maxHealth, armor, maxArmor = 0, 100, 0, 100
+        local humanoid = character:FindFirstChildOfClass("Humanoid")
+        if humanoid then health, maxHealth = humanoid.Health, humanoid.MaxHealth end
+        local armorValue = character:FindFirstChild("Armor") or character:FindFirstChild("BodyArmor") or character:FindFirstChild("Kevlar")
+        if armorValue and (armorValue:IsA("NumberValue") or armorValue:IsA("IntValue")) then armor, maxArmor = armorValue.Value, 100 end
+        return { health = health, maxHealth = maxHealth, healthFactor = health / maxHealth, armor = armor, maxArmor = maxArmor, armorFactor = armor / maxArmor }
+    end
+
+    local ScreenGui = Functions:Create("ScreenGui", { Parent = CoreGui, Name = "ESPHolder", ZIndexBehavior = Enum.ZIndexBehavior.Sibling, ResetOnSpawn = false })
+    local DupeCheck = function(plr) if ScreenGui:FindFirstChild(plr.Name) then ScreenGui[plr.Name]:Destroy() end end
+
+    local ESP_Function = function(plr)
+        coroutine.wrap(DupeCheck)(plr)
+        local MainFrame = Functions:Create("Folder", {Name = plr.Name, Parent = ScreenGui})
+
+        local Name = Functions:Create("TextLabel", {Parent = MainFrame, Position = UDim2.new(0.5, 0, 0, -11), Size = UDim2.new(0, 100, 0, 20), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Code, TextSize = ESP_CONFIG.FontSize, TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(0, 0, 0), RichText = true})
+        local Distance = Functions:Create("TextLabel", {Parent = MainFrame, Position = UDim2.new(0.5, 0, 0, 11), Size = UDim2.new(0, 100, 0, 20), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Code, TextSize = ESP_CONFIG.FontSize, TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(0, 0, 0), RichText = true})
+        local Weapon = Functions:Create("TextLabel", {Parent = MainFrame, Position = UDim2.new(0.5, 0, 0, 31), Size = UDim2.new(0, 100, 0, 20), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundTransparency = 1, TextColor3 = Color3.fromRGB(255, 255, 255), Font = Enum.Font.Code, TextSize = ESP_CONFIG.FontSize, TextStrokeTransparency = 0, TextStrokeColor3 = Color3.fromRGB(0, 0, 0), RichText = true})
+        local Box = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(0, 0, 0), BackgroundTransparency = 0.75, BorderSizePixel = 0})
+
+        local Gradient1 = Functions:Create("UIGradient", {Parent = Box, Enabled = ESP_CONFIG.Drawing.Boxes.GradientFill, Color = ColorSequence.new{ColorSequenceKeypoint.new(0, ESP_CONFIG.Drawing.Boxes.GradientFillRGB1), ColorSequenceKeypoint.new(1, ESP_CONFIG.Drawing.Boxes.GradientFillRGB2)}})
+        local Outline = Functions:Create("UIStroke", {Parent = Box, Enabled = ESP_CONFIG.Drawing.Boxes.Gradient, Transparency = 0, Color = Color3.fromRGB(255, 255, 255), LineJoinMode = Enum.LineJoinMode.Miter})
+        local Gradient2 = Functions:Create("UIGradient", {Parent = Outline, Enabled = ESP_CONFIG.Drawing.Boxes.Gradient, Color = ColorSequence.new{ColorSequenceKeypoint.new(0, ESP_CONFIG.Drawing.Boxes.GradientRGB1), ColorSequenceKeypoint.new(1, ESP_CONFIG.Drawing.Boxes.GradientRGB2)}})
+        local Chams = Functions:Create("Highlight", {Parent = MainFrame, FillTransparency = 1, OutlineTransparency = 0, OutlineColor = Color3.fromRGB(119, 120, 255), DepthMode = "AlwaysOnTop"})
+
+        local CornerFrames = {
+            LeftTop = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB}),
+            LeftSide = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB}),
+            RightTop = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB}),
+            RightSide = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB}),
+            BottomSide = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB}),
+            BottomDown = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB}),
+            BottomRightSide = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB}),
+            BottomRightDown = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB})
+        }
+
+        local Bars = {}
+        for flag, layout in pairs(ESP_CONFIG.BarLayout) do
+            Bars[flag] = { outline = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(0, 0, 0), BorderSizePixel = 0}), inline = Functions:Create("Frame", {Parent = MainFrame, BackgroundColor3 = Color3.fromRGB(255, 255, 255), BorderSizePixel = 0}) }
+        end
+
+        local Updater = function()
+            local function HideESP()
+                for _, v in pairs(MainFrame:GetChildren()) do
+                    if v:IsA("GuiObject") then
+                        v.Visible = false
+                    end
+                end
+                Chams.Adornee = nil
+                Chams.Enabled = false
+            end
+
+            Euphoria.RunService.RenderStepped:Connect(function()
+                local shouldShow = false
+                if ESP_CONFIG.Enabled and plr and plr.Character and plr.Character:FindFirstChild("HumanoidRootPart") and plr.Character:FindFirstChildOfClass("Humanoid") then
+                    local HRP = plr.Character.HumanoidRootPart
+                    local Humanoid = plr.Character.Humanoid
+                    if Humanoid.Health > 0 then
+                        local Pos, OnScreen = camera:WorldToScreenPoint(HRP.Position)
+                        local Dist = (camera.CFrame.Position - HRP.Position).Magnitude
+
+                        if OnScreen and Dist <= ESP_CONFIG.MaxDistance then
+                            if not (ESP_CONFIG.TeamCheck and plr ~= lplayer and lplayer.Team == plr.Team and plr.Team ~= nil) then
+                                shouldShow = true
+                            end
+                        end
+                    end
+                end
+
+                if shouldShow then
+                    local HRP = plr.Character.HumanoidRootPart
+                    local Pos = camera:WorldToScreenPoint(HRP.Position)
+                    local Dist = (camera.CFrame.Position - HRP.Position).Magnitude
+
+                    for _,v in pairs(MainFrame:GetChildren()) do if v:IsA("GuiObject") then v.Visible = true end end
+
+                    local Size = HRP.Size.Y
+                    local scaleFactor = (Size * camera.ViewportSize.Y) / (Pos.Z * 2)
+                    local w, h = 3 * scaleFactor, 4.5 * scaleFactor
+                    local playerStats = Functions:GetPlayerStats(plr.Character)
+
+                    if ESP_CONFIG.Drawing.Chams.Enabled then
+                        Chams.Adornee = plr.Character; Chams.Enabled = true
+                        Chams.FillColor = ESP_CONFIG.Drawing.Chams.FillRGB; Chams.OutlineColor = ESP_CONFIG.Drawing.Chams.OutlineRGB
+                        if ESP_CONFIG.Drawing.Chams.Thermal then
+                            local breathe_effect = math.atan(math.sin(tick() * 2)) * 2 / math.pi
+                            Chams.FillTransparency = (100 - ESP_CONFIG.Drawing.Chams.Fill_Transparency) * breathe_effect * 0.01
+                            Chams.OutlineTransparency = (100 - ESP_CONFIG.Drawing.Chams.Outline_Transparency) * breathe_effect * 0.01
+                        else
+                            Chams.FillTransparency = 1 - (ESP_CONFIG.Drawing.Chams.Fill_Transparency / 100)
+                            Chams.OutlineTransparency = 1 - (ESP_CONFIG.Drawing.Chams.Outline_Transparency / 100)
+                        end
+                        Chams.DepthMode = ESP_CONFIG.Drawing.Chams.VisibleCheck and "Occluded" or "AlwaysOnTop"
+                    else
+                        Chams.Enabled = false
+                    end
+
+                    Box.Visible = ESP_CONFIG.Drawing.Boxes.Full.Enabled; Box.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y - h / 2); Box.Size = UDim2.new(0, w, 0, h)
+                    if ESP_CONFIG.Drawing.Boxes.Filled.Enabled then Box.BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Filled.RGB; Box.BackgroundTransparency = ESP_CONFIG.Drawing.Boxes.Filled.Transparency; Box.BorderSizePixel = 1 else Box.BackgroundTransparency = 1 end
+
+                    for _, frame in pairs(CornerFrames) do frame.BackgroundColor3 = ESP_CONFIG.Drawing.Boxes.Corner.RGB end
+                    CornerFrames.LeftTop.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.LeftTop.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y - h / 2); CornerFrames.LeftTop.Size = UDim2.new(0, w / 5, 0, 1);
+                    CornerFrames.LeftSide.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.LeftSide.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y - h / 2); CornerFrames.LeftSide.Size = UDim2.new(0, 1, 0, h / 5);
+                    CornerFrames.BottomSide.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.BottomSide.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y + h / 2); CornerFrames.BottomSide.Size = UDim2.new(0, 1, 0, h / 5); CornerFrames.BottomSide.AnchorPoint = Vector2.new(0, 1);
+                    CornerFrames.BottomDown.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.BottomDown.Position = UDim2.new(0, Pos.X - w / 2, 0, Pos.Y + h / 2); CornerFrames.BottomDown.Size = UDim2.new(0, w / 5, 0, 1); CornerFrames.BottomDown.AnchorPoint = Vector2.new(0, 1);
+                    CornerFrames.RightTop.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.RightTop.Position = UDim2.new(0, Pos.X + w / 2, 0, Pos.Y - h / 2); CornerFrames.RightTop.Size = UDim2.new(0, w / 5, 0, 1); CornerFrames.RightTop.AnchorPoint = Vector2.new(1, 0);
+                    CornerFrames.RightSide.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.RightSide.Position = UDim2.new(0, Pos.X + w / 2 - 1, 0, Pos.Y - h / 2); CornerFrames.RightSide.Size = UDim2.new(0, 1, 0, h / 5); CornerFrames.RightSide.AnchorPoint = Vector2.new(0, 0);
+                    CornerFrames.BottomRightSide.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.BottomRightSide.Position = UDim2.new(0, Pos.X + w / 2, 0, Pos.Y + h / 2); CornerFrames.BottomRightSide.Size = UDim2.new(0, 1, 0, h / 5); CornerFrames.BottomRightSide.AnchorPoint = Vector2.new(1, 1);
+                    CornerFrames.BottomRightDown.Visible = ESP_CONFIG.Drawing.Boxes.Corner.Enabled; CornerFrames.BottomRightDown.Position = UDim2.new(0, Pos.X + w / 2, 0, Pos.Y + h / 2); CornerFrames.BottomRightDown.Size = UDim2.new(0, w / 5, 0, 1); CornerFrames.BottomRightDown.AnchorPoint = Vector2.new(1, 1);
+                    local bar_data = { health = { progress = playerStats.healthFactor }, armor = { progress = playerStats.armorFactor } };
+                    local bar_positions = { top = 0, bottom = 0, left = 0, right = 0 }
+                    for flag, bar in pairs(Bars) do
+                        local layout = ESP_CONFIG.BarLayout[flag]; local data = bar_data[flag]
+                        if not layout.enabled then bar.outline.Visible, bar.inline.Visible = false, false; continue end
+                        bar.outline.Visible, bar.inline.Visible = true, true; local progress = data and data.progress or 0; local vertical = layout.position == 'left' or layout.position == 'right'
+                        bar.outline.Size = vertical and UDim2.new(0, 3, 0, h + 2) or UDim2.new(0, w + 2, 0, 3);
+                        bar.outline.Position = UDim2.new(0, layout.position == 'left' and Pos.X - w / 2 - 5 - bar_positions.left or layout.position == 'right' and Pos.X + w / 2 + 2 + bar_positions.right, 0, layout.position == 'top' and Pos.Y - h / 2 - (5 + bar_positions.top) or layout.position == 'bottom' and Pos.Y + h / 2 + 2 + bar_positions.bottom or Pos.Y - h / 2 - 1)
+                        bar.inline.BackgroundColor3 = layout.color_empty:lerp(layout.color_full, progress); bar.inline.Size = vertical and UDim2.new(0, 1, 0, progress * h) or UDim2.new(0, progress * w, 0, 1)
+                        if vertical then bar.inline.Position = UDim2.new(0, bar.outline.Position.X.Offset + 1, 0, bar.outline.Position.Y.Offset + 1 + h - progress * h) else bar.inline.Position = UDim2.new(0, bar.outline.Position.X.Offset + 1, 0, bar.outline.Position.Y.Offset + 1) end
+                        bar_positions[layout.position] = bar_positions[layout.position] + 4
+                    end
+
+                    Name.Visible = ESP_CONFIG.Drawing.Names.Enabled; Name.Position = UDim2.new(0, Pos.X, 0, Pos.Y - h / 2 - 9); Name.TextSize = ESP_CONFIG.FontSize
+                    if ESP_CONFIG.Options.Friendcheck and lplayer:IsFriendsWith(plr.UserId) then Name.Text = string.format('(<font color="rgb(%d, %d, %d)">F</font>) %s', ESP_CONFIG.Options.FriendcheckRGB.R * 255, ESP_CONFIG.Options.FriendcheckRGB.G * 255, ESP_CONFIG.Options.FriendcheckRGB.B * 255, plr.Name) else Name.Text = string.format("%s", plr.Name) end
+
+                    if ESP_CONFIG.Drawing.Distances.Enabled then
+                        if ESP_CONFIG.Drawing.Distances.Position == "Text" then
+                            Name.Text = Name.Text .. string.format(" [%dm]", math.floor(Dist))
+                            Distance.Visible = false
+                        else
+                            Distance.Visible = true
+                            Distance.Position = UDim2.new(0, Pos.X, 0, Pos.Y + h / 2 + 7)
+                            Distance.Text = string.format("%dm", math.floor(Dist))
+                        end
+                    end
+
+                    if ESP_CONFIG.FadeOut.OnDistance then
+                        Functions:FadeOutOnDist(Box, Dist); Functions:FadeOutOnDist(Outline, Dist); Functions:FadeOutOnDist(Name, Dist); Functions:FadeOutOnDist(Distance, Dist); Functions:FadeOutOnDist(Chams, Dist)
+                        for _, frame in pairs(CornerFrames) do Functions:FadeOutOnDist(frame, Dist) end
+                        for _, bar in pairs(Bars) do Functions:FadeOutOnDist(bar.outline, Dist); Functions:FadeOutOnDist(bar.inline, Dist) end
+                    end
+                else
+                    HideESP()
+                end
+            end)
+        end
+        coroutine.wrap(Updater)()
+    end
+
+    for _, v in pairs(Players:GetPlayers()) do if v.Name ~= lplayer.Name then coroutine.wrap(ESP_Function)(v) end end
+    Players.PlayerAdded:Connect(function(v) coroutine.wrap(ESP_Function)(v) end)
+    Players.PlayerRemoving:Connect(function(v) if ScreenGui:FindFirstChild(v.Name) then ScreenGui[v.Name]:Destroy() end end)
+end
+
+local player = LocalPlayer
+local display = player and player.DisplayName or "User"
+local Window = Library:Window({Name = "Anixety.cc | - | Welcome " .. display})
+
+local plyaha = player and player.Name or "Player"
+local dick2 = string.sub(tostring(math.random()), 3, 8)
+local what = {"Santa", "The Grinch", "Ozzy"}
+local christmasCharacter = what[math.random(#what)] or "Santa"
+
+local Watermark = Library:Watermark({Name = string.format([[$$ osamason $$ | %s | %s | %s |
+Christmas Cheer | Jingle Bells | Snowflakes |
+Holiday Vibes |
+gyatt]], plyaha, dick2, christmasCharacter)})
+local Indicator = Library:Indicator({Name = "Target Indicator"})
+local TextIndicator = Indicator:NewValue({Name = "Target:", Value = "No Target"})
+local BarIndicator = Indicator:NewBar({Name = "Health", Value = 0, Min = 0, Max = 100})
+
+local Page = Window:Page({Name = "Main", Weapons = true})
+local Visuals = Window:Page({Name = "Visuals", Weapons = true})
+local Sat = Window:Page({Name = "Rage", Weapons = true})
+local playahlis = Window:Page({Name = "Playerlist", Weapons = true})
+local SettingsUI = Window:Page({Name = "Settings"})
+
+local SubPage1 = Page:Weapon({Icon = "rbxassetid://78117064682304"})
+local SubPage2 = Page:Weapon({Icon = "rbxassetid://120304994615919"})
+local SubPage3 = Page:Weapon({Icon = "rbxassetid://77469221937135"})
+local SubPage4 = Page:Weapon({Icon = "rbxassetid://128385756502234"})
+local SubPage5 = playahlis:Weapon({Icon = "rbxassetid://114736089502081"})
+local SubPage6 = Sat:Weapon({Icon = "rbxassetid://8547258459"})
+local SubPage7 = Visuals:Weapon({Icon = "rbxassetid://16997762295"})
+local SubPage8 = Visuals:Weapon({Icon = "rbxassetid://77469221937135"})
+
+local DesyncSection = SubPage3:Section({Name = "Position Desync", Side = "Left"})
+DesyncSection:Toggle({
+    Name = "Enable Fake Position",
+    Default = false,
+    Callback = function(v)
+        coolboy.cframetpdesync = v
+    end
+})
+DesyncSection:Slider({
+    Name = "Offset X",
+    Min = -20,
+    Max = 20,
+    Default = 0,
+    Callback = function(v)
+        coolboy.customcframetpx = v
+    end
+})
+DesyncSection:Slider({
+    Name = "Offset Y",
+    Min = -20,
+    Max = 20,
+    Default = -8.5,
+    Callback = function(v)
+        coolboy.customcframetpy = v
+    end
+})
+DesyncSection:Slider({
+    Name = "Offset Z",
+    Min = -20,
+    Max = 20,
+    Default = 0,
+    Callback = function(v)
+        coolboy.customcframetpz = v
+    end
+})
+
+local MovementExploitsSection = SubPage3:Section({Name = "Movement", Side = "Right"})
+MovementExploitsSection:Toggle({
+    Name = "No Jump Cooldown",
+    Default = false,
+    Callback = function(v)
+        coolboy.noJumpCooldown = v
+    end
+})
+MovementExploitsSection:Toggle({
+    Name = "No Slowdown",
+    Default = false,
+    Callback = function(v)
+        coolboy.noSlow = v
+    end
+})
+
+local VisualMain = SubPage7:Section({Name = "Self"})
+VisualMain:Toggle({Name = "Body Chams", Default = coolboy.SelfVisuals.ForcefieldBody.Enabled, Callback = function(v) coolboy.SelfVisuals.ForcefieldBody.Enabled = v; applyForcefieldToBody() end})
+VisualMain:Colorpicker({ Name = "Body Color", Default = coolboy.SelfVisuals.ForcefieldBody.Color, Callback = function(v) coolboy.SelfVisuals.ForcefieldBody.Color = v; applyForcefieldToBody() end })
+VisualMain:Toggle({ Name = "Accessory Chams", Default = coolboy.SelfVisuals.ForcefieldHats.Enabled, Callback = function(v) coolboy.SelfVisuals.ForcefieldHats.Enabled = v; applyForcefieldToHats() end })
+VisualMain:Colorpicker({ Name = "Accessory Color", Default = coolboy.SelfVisuals.ForcefieldHats.Color, Callback = function(v) coolboy.SelfVisuals.ForcefieldHats.Color = v; applyForcefieldToHats() end })
+VisualMain:Toggle({Name = "Self Trail", Default = coolboy.SelfVisuals.Trail.Enabled, Callback = function(v) coolboy.SelfVisuals.Trail.Enabled = v; update_trail() end})
+VisualMain:Colorpicker({ Name = "Trail Inside Color", Default = coolboy.SelfVisuals.Trail.InsideColor, Callback = function(v) coolboy.SelfVisuals.Trail.InsideColor = v; update_trail() end })
+VisualMain:Colorpicker({ Name = "Trail Outside Color", Default = coolboy.SelfVisuals.Trail.OutsideColor, Callback = function(v) coolboy.SelfVisuals.Trail.OutsideColor = v; update_trail() end })
+
+local VisualEnv = SubPage7:Section({Name = "Environment", Side = "Right"})
+VisualEnv:Toggle({Name = "Fog Enabled", Default = coolboy.Environment.Settings.FogEnabled, Callback = function(v) coolboy.Environment.Settings.FogEnabled = v; fogmaker() end})
+VisualEnv:Colorpicker({Name = "Fog Color", Default = coolboy.Environment.Settings.FogColor, Callback = function(v) coolboy.Environment.Settings.FogColor = v; fogmaker() end})
+VisualEnv:Slider({ Name = "Fog Start", Min = 0, Max = 1000, Default = coolboy.Environment.Settings.FogStart, Callback = function(v) coolboy.Environment.Settings.FogStart = v; fogmaker() end })
+VisualEnv:Slider({ Name = "Fog End", Min = 0, Max = 2000, Default = coolboy.Environment.Settings.FogEnd, Callback = function(v) coolboy.Environment.Settings.FogEnd = v; fogmaker() end })
+VisualEnv:Toggle({ Name = "World Coloring", Default = coolboy.Environment.Settings.WorldEnabled, Callback = function(v) coolboy.Environment.Settings.WorldEnabled = v; UpdateWorld() end })
+VisualEnv:Colorpicker({Name = "Ambient", Default = coolboy.Environment.Settings.Ambient, Callback = function(v) coolboy.Environment.Settings.Ambient = v; UpdateWorld() end})
+VisualEnv:Colorpicker({Name = "ColorShift Top", Default = coolboy.Environment.Settings.ColorShift_Top, Callback = function(v) coolboy.Environment.Settings.ColorShift_Top = v; UpdateWorld() end})
+VisualEnv:Colorpicker({ Name = "ColorShift Bottom", Default = coolboy.Environment.Settings.ColorShift_Bottom, Callback = function(v) coolboy.Environment.Settings.ColorShift_Bottom = v; UpdateWorld() end })
+
+local VisualESP = SubPage8:Section({Name = "Player ESP"})
+VisualESP:Toggle({ Name = "Esp Enabled", Default = coolboy.ESP.Enabled, Callback = function(v) coolboy.ESP.Enabled = v; local espHolder = CoreGui:FindFirstChild("ESPHolder"); if espHolder then espHolder.Enabled = v end end})
+VisualESP:Toggle({Name = "Team Check", Default = coolboy.ESP.TeamCheck, Callback = function(v) coolboy.ESP.TeamCheck = v end})
+VisualESP:Toggle({Name = "Corner Boxes", Default = coolboy.ESP.Drawing.Boxes.Corner.Enabled, Callback = function(v) coolboy.ESP.Drawing.Boxes.Corner.Enabled = v end})
+VisualESP:Toggle({Name = "Full Boxes", Default = coolboy.ESP.Drawing.Boxes.Full.Enabled, Callback = function(v) coolboy.ESP.Drawing.Boxes.Full.Enabled = v end})
+VisualESP:Toggle({Name = "Names", Default = coolboy.ESP.Drawing.Names.Enabled, Callback = function(v) coolboy.ESP.Drawing.Names.Enabled = v end})
+VisualESP:Toggle({Name = "Distance", Default = coolboy.ESP.Drawing.Distances.Enabled, Callback = function(v) coolboy.ESP.Drawing.Distances.Enabled = v end})
+VisualESP:Toggle({Name = "Chams", Default = coolboy.ESP.Drawing.Chams.Enabled, Callback = function(v) coolboy.ESP.Drawing.Chams.Enabled = v end})
+VisualESP:Toggle({Name = "Health Bar", Default = coolboy.ESP.BarLayout.health.enabled, Callback = function(v) coolboy.ESP.BarLayout.health.enabled = v end})
+VisualESP:Toggle({Name = "Armor Bar", Default = coolboy.ESP.BarLayout.armor.enabled, Callback = function(v) coolboy.ESP.BarLayout.armor.enabled = v end})
+VisualESP:Colorpicker({Name = "Box Color", Default = coolboy.ESP.Drawing.Boxes.Corner.RGB, Callback = function(v) coolboy.ESP.Drawing.Boxes.Corner.RGB = v end})
+VisualESP:Colorpicker({Name = "Box Fill Color", Default = coolboy.ESP.Drawing.Boxes.Filled.RGB, Callback = function(v) coolboy.ESP.Drawing.Boxes.Filled.RGB = v end})
+VisualESP:Slider({Name = "Box Fill Transparency", Min = 0, Max = 1, Default = coolboy.ESP.Drawing.Boxes.Filled.Transparency, Callback = function(v) coolboy.ESP.Drawing.Boxes.Filled.Transparency = v end})
+VisualESP:Colorpicker({Name = "Chams Color", Default = coolboy.ESP.Drawing.Chams.FillRGB, Callback = function(v) coolboy.ESP.Drawing.Chams.FillRGB = v; coolboy.ESP.Drawing.Chams.OutlineRGB = v end})
+VisualESP:Slider({Name = "Max Distance", Min = 50, Max = 1000, Default = coolboy.ESP.MaxDistance, Callback = function(v) coolboy.ESP.MaxDistance = v end})
+VisualESP:Slider({Name = "Font Size", Min = 8, Max = 24, Default = coolboy.ESP.FontSize, Callback = function(v) coolboy.ESP.FontSize = v end})
+VisualESP:Slider({Name = "Chams Transparency", Min = 0, Max = 100, Default = coolboy.ESP.Drawing.Chams.Fill_Transparency, Callback = function(v) coolboy.ESP.Drawing.Chams.Fill_Transparency = v end})
+
+SubPage5:PlayerList({Flag = "CurrentPlayer"})
+local PlayerlistONE = SubPage5:Section({Name = ">_<", Zindex = 2, Side = "Right"})
+PlayerlistONE:Button({Name = "Goto", Callback = function()
+    local targetPlayer = Library.Flags.CurrentPlayer
+    local localCharacter = LocalPlayer.Character
+    if targetPlayer and targetPlayer.Character and targetPlayer.Character:FindFirstChild("HumanoidRootPart") and localCharacter and localCharacter:FindFirstChild("HumanoidRootPart") then
+        localCharacter.HumanoidRootPart.CFrame = targetPlayer.Character.HumanoidRootPart.CFrame
+    end
+end})
+
+local TargetAimSection = SubPage1:Section({Name = "Silent/Target", Side = "Left"})
+local CamlockSection = SubPage2:Section({Name = "Aim Assist", Side = "Left"})
+
+CamlockSection:Toggle({Name = "Aim Assist", Default = coolboy.Camera, Callback = function(a) coolboy.Camera = a end})
+CamlockSection:Toggle({Name = "Auto Air", Default = coolboy.AutoAir, Callback = function(a) coolboy.AutoAir = a end})
+CamlockSection:Textbox({Name = "Smoothness", Default = "0.3", Callback = function(a) coolboy.AimSmoothness = tonumber(a) or 0.3 end})
+CamlockSection:Textbox({Name = "Prediction", Default = "0.134", Callback = function(a) coolboy.CamPredHori = tonumber(a) or 0.134 end})
+CamlockSection:List({
+    Name = "Part",
+    Options = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "LeftUpperArm", "LeftLowerArm", "LeftHand", "RightUpperArm", "RightLowerArm", "RightHand", "LeftUpperLeg", "LeftLowerLeg", "LeftFoot", "RightUpperLeg", "RightLowerLeg", "RightFoot"},
+    Default = "Head",
+    Callback = function(a) coolboy.CamlockPart = a end
+})
+
+local SilentAimSection = SubPage2:Section({Name = "Silent Aim", Side = "Right"})
+SilentAimSection:Toggle({Name = "Enable Silent Aim", Default = coolboy.SilentAim.Enabled, Callback = function(v) coolboy.SilentAim.Enabled = v end})
+SilentAimSection:Toggle({Name = "Show FOV", Default = coolboy.SilentAim.ShowFOV, Callback = function(v) coolboy.SilentAim.ShowFOV = v end})
+SilentAimSection:Slider({Name = "FOV Radius", Min = 10, Max = 500, Default = coolboy.SilentAim.FOVRadius, Callback = function(v) coolboy.SilentAim.FOVRadius = v end})
+SilentAimSection:Colorpicker({Name = "FOV Color", Default = coolboy.SilentAim.FOVColor, Callback = function(v) coolboy.SilentAim.FOVColor = v end})
+SilentAimSection:Textbox({Name = "Prediction X", Default = tostring(coolboy.SilentAim.PredictionFactorX), Callback = function(v) coolboy.SilentAim.PredictionFactorX = tonumber(v) or 0.143 end})
+SilentAimSection:Textbox({Name = "Prediction Y", Default = tostring(coolboy.SilentAim.PredictionFactorY), Callback = function(v) coolboy.SilentAim.PredictionFactorY = tonumber(v) or 0.143 end})
+SilentAimSection:Textbox({Name = "Prediction Z", Default = tostring(coolboy.SilentAim.PredictionFactorZ), Callback = function(v) coolboy.SilentAim.PredictionFactorZ = tonumber(v) or 0.136 end})
+SilentAimSection:List({
+    Name = "Target Part",
+    Options = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart"},
+    Default = "HumanoidRootPart",
+    Callback = function(a) coolboy.SilentAim.TargetPart = a end
+})
+SilentAimSection:Keybind({Name = "Sticky Target Key", Default = Enum.KeyCode.C, Callback = function(key) coolboy.SilentAim.StickyKey = key end})
+
+TargetAimSection:Toggle({
+    Name = "Enable Target Aim",
+    Default = coolboy.TargetAimbot.Enabled,
+    Callback = function(a)
+        coolboy.TargetAimbot.Enabled = a
+        if not a then
+            coolboy.Target.main.enabled = false
+            Plr = nil
+            target_health = nil
+            if Button then Button.Text = "Lock: " .. "<font color='rgb(255, 0, 0)'>OFF</font>" end
+        end
+    end
+})
+TargetAimSection:Toggle({Name = "Show Dot", Default = coolboy.Target.main.dot_enabled, Callback = function(v) coolboy.Target.main.dot_enabled = v end})
+TargetAimSection:Toggle({Name = "Airshot", Default = false, Callback = function(a) coolboy.AirshotEnabled = a end})
+TargetAimSection:Toggle({Name = "Auto Air", Default = coolboy.AutoAir, Callback = function(a) coolboy.AutoAir = a end})
+TargetAimSection:Toggle({Name = "Look At", Default = coolboy.LookAt, Callback = function(a) coolboy.LookAt = a end})
+TargetAimSection:Toggle({Name = "View At (Spectate)", Callback = function(a) coolboy.TargetAimbot.CSync.Spectate = a end})
+TargetAimSection:Toggle({Name = "Highlight", Callback = function(a) Highlight = a end})
+
+local nnigga = SubPage1:Section({Name = "HitPart", Side = "Left"})
+nnigga:List({
+    Name = "BodyPart",
+    Options = {"Head", "UpperTorso", "LowerTorso", "HumanoidRootPart", "RightFoot"},
+    Default = "HumanoidRootPart",
+    Callback = function(a) 
+        coolboy.Target.main.aimpart = a
+        coolboy.OriginalAimPart = a 
+    end
+})
+local lockmethod = SubPage1:Section({Name = "Lock Method", Side = "Left"})
+lockmethod:List({
+    Name = "Lock Method",
+    Options = {"Index", "Namecall"},
+    Default = coolboy.TargetAimbot.LockType,
+    Callback = function(option)
+        coolboy.TargetAimbot.LockType = option
+        coolboy.TargetAimbot.NamecallEnabled = option == "Namecall"
+        coolboy.TargetAimbot.IndexEnabled = option == "Index"
+    end
+})
+
+local idkquit = SubPage1:Section({Name = "Calculation", Side = "Right"})
+idkquit:Divider({Name = "Prediction"})
+idkquit:Textbox({Name = "Prediction", Default = tostring(coolboy.Target.main.prediction), Callback = function(a) coolboy.Target.main.prediction = tonumber(a) or 0.145 end})
+idkquit:Textbox({Name = "Offset", Default = "0.04", Callback = function(a) coolboy.AimOffset = tonumber(a) or 0.04 end})
+idkquit:Divider({Name = "Resolver"})
+idkquit:Toggle({Name = "Enable Resolver", Callback = function(a) coolboy.ResolverEnabled = a end})
+
+local nomorees = SubPage1:Section({Name = "Checks", Side = "Right"})
+nomorees:Toggle({Name = "Anti Ground Shots", Default = coolboy.NoGroundShot, Callback = function(a) coolboy.NoGroundShot = a end})
+
+local CFrameShit = SubPage6:Section({Name = "CFrame Speed", Side = "Left", Zindex = 2})
+CFrameShit:Toggle({Name = "Enabled", Callback = function(a) coolboy.cframespeedtoggle = a end})
+CFrameShit:Slider({Name = "Speed", Min = 0, Max = 20, Default = 1.24, Decimal = 0.01, Suffix = "", Callback = function(a) coolboy.speedvalue = a end})
+
+local DaHoodSection = SubPage6:Section({Name = "Dh Stuff", Side = "Left", Zindex = 2})
+DaHoodSection:Toggle({
+    Name = "Infinite Range Db",
+    Default = false,
+    Callback = function(v)
+        setWeaponRange("[Double-Barrel SG]", v)
+    end
+})
+DaHoodSection:Toggle({
+    Name = "Infinite Range Tac",
+    Default = false,
+    Callback = function(v)
+        setWeaponRange("[TacticalShotgun]", v)
+    end
+})
+DaHoodSection:Toggle({
+    Name = "Infinite Range Rev",
+    Default = false,
+    Callback = function(v)
+        setWeaponRange("[Revolver]", v)
+    end
+})
+local wallbangcon
+local infammocon
+
+DaHoodSection:Toggle({
+    Name = "Wallbang",
+    Default = false,
+    Callback = function(state)
+        if state then
+            local i = workspace.Ignored
+            if i then
+                for _, w in ipairs({"Vehicles", "MAP"}) do
+                    local f = workspace[w]
+                    if f then
+                        f.Parent = i
+                    end
+                end
+            end
+        else
+            for _, w in ipairs({"Vehicles", "MAP"}) do
+                local f = workspace.Ignored:FindFirstChild(w)
+                if f then
+                    f.Parent = workspace
+                end
+            end
+        end
+    end
+})
+
+DaHoodSection:Toggle({
+    Name = "Inf Ammo",
+    Default = false,
+    Callback = function(state)
+        if state then
+            infammocon = r.Heartbeat:Connect(function()
+                if not _G.i then return end
+                local c = p.Character
+                if not c then return end
+                local t = c:FindFirstChildWhichIsA("Tool")
+                if not t then return end
+                local a = t:FindFirstChild("Ammo")
+                local m = t:FindFirstChild("MaxAmmo")
+                if a and a:IsA("IntValue") then a.Value = 999 end
+                if m and m:IsA("IntValue") then m.Value = 999 end
+            end)
+        else
+            if infammocon then
+                infammocon:Disconnect()
+                infammocon = nil
+            end
+        end
+    end
+})
+local RageExploits = SubPage6:Section({Name = "Real dahood only", Side = "Right", Zindex = 2})
+RageExploits:Toggle({Name = "Rapid Fire", Default = false, Callback = function(v)
+    RapidFireEnabled = v
+    if v and LocalPlayer.Character then
+        local currentTool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+        if currentTool then
+            modifiedTools[currentTool] = nil
+            rapidfire(currentTool)
+        end
+    elseif not v then
+        modifiedTools = {}
+    end
+end})
+RageExploits:Toggle({Name = "Hitbox Expander", Default = false, Callback = function(v)
+    hitboxExpanderEnabled = v
+end})
+RageExploits:Slider({Name = "Hitbox Size", Min = 1, Max = 50, Default = 10, Suffix = " studs", Callback = function(v)
+    size = v
+end})
+-- didnt make the logo img my friend did i was lazy
+local a = SubPage6:Section({Name = "HvH", Side = "Left"})
+local b = false
+local c = CFrame.new
+local d = game.Players.LocalPlayer
+local e = game:GetService("RunService")
+local f
+local g
+local h = false
+local i = false
+local t
+local u
+local H
+
+local function v(w)
+    if t then t:Destroy() end
+    if u then u:Destroy() end
+    t = Instance.new("Part")
+    t.Name = "DesyncAnchorPart"
+    t.Size = Vector3.new(3, 3, 3)
+    t.CFrame = w
+    t.Anchored = true
+    t.CanCollide = false
+    t.Transparency = 1
+    t.Parent = workspace
+    u = Instance.new("BillboardGui")
+    u.Name = "DesyncBillboard"
+    u.Size = UDim2.new(0, 40, 0, 40)
+    u.AlwaysOnTop = true
+    u.MaxDistance = 1000
+    u.Adornee = t
+    u.Parent = d:WaitForChild("PlayerGui")
+    local x = Instance.new("ImageLabel")
+    x.Name = "TempleImage"
+    x.Size = UDim2.new(55, 0, 55, 0)
+    x.Position = UDim2.new(0, 0, 0, 0)
+    x.BackgroundTransparency = 1
+    x.Image = "rbxassetid://135204923009339"
+    x.ImageTransparency = 0.2
+    x.ZIndex = 10
+    x.Parent = u
+    local y = Instance.new("ImageLabel")
+    y.Name = "CircleOutline"
+    y.Size = UDim2.new(3, 0, 3, 0)
+    y.Position = UDim2.new(-0.25, 0, -0.25, 0)
+    y.BackgroundTransparency = 1
+    y.Image = "rbxassetid://4950765162"
+    y.ImageColor3 = Color3.fromRGB(255, 100, 100)
+    y.ImageTransparency = 0.4
+    y.ZIndex = 9
+    y.Parent = u
+    local z = e.Heartbeat:Connect(function()
+        if not u or not u.Parent then
+            z:Disconnect()
+            return
+        end
+        local A = (math.sin(tick() * 2) + 1) / 2
+        x.ImageTransparency = 0.2 + (A * 0.3)
+        y.ImageTransparency = 0.4 + (A * 0.3)
+        x.Size = UDim2.new(0.8 + (A * 0.2), 0, 0.8 + (A * 0.2), 0)
+        x.Position = UDim2.new((1 - (0.8 + (A * 0.2))) / 2, 0, (1 - (0.8 + (A * 0.2))) / 2, 0)
+    end)
+end
+
+local function B()
+    if t then t:Destroy() end
+    if u then u:Destroy() end
+    t = nil
+    u = nil
+end
+
+local function C()
+    if not t or not u then return end
+    local n = d.Character and d.Character:FindFirstChild("HumanoidRootPart")
+    if not n then return end
+    local I = getrawmetatable(game)
+    local J = I.__index
+    local K = J(n, "CFrame")
+    local D = RaycastParams.new()
+    D.FilterType = Enum.RaycastFilterType.Exclude
+    D.FilterDescendantsInstances = {d.Character}
+    local E = K.Position + Vector3.new(0, 2, 0)
+    local F = Vector3.new(0, -100, 0)
+    local G = workspace:Raycast(E, F, D)
+    if G then
+        t.CFrame = c(G.Position + Vector3.new(0, 0.05, 0))
+    else
+        t.CFrame = c(K.Position - Vector3.new(0, 3, 0))
+    end
+end
+
+local function j()
+    if not d.Character then
+        B()
+        return
+    end
+    local n = d.Character:FindFirstChild("HumanoidRootPart")
+    local q = d.Character:FindFirstChild("Humanoid")
+    if not n or not q or q.Health <= 0 then
+        B()
+        return
+    end
+    local k = tick()
+    local l = math.fmod(k, 0.5)
+    local m = h and l < 0.16 or i
+    if b or m then
+        if not t then v(n.CFrame) end
+        C()
+        g = n.CFrame
+        local o = n.CFrame * c(-1771737281728883e161667212, -2772727377271773737279e817372617377371772738483823720, -5972717177372772772e617173272000)
+        if b then
+            f = n.CFrame
+            n.CFrame = c(9e9, 0/0, math.huge)
+            e.RenderStepped:Wait()
+            n.CFrame = f
+        elseif m then
+            n.CFrame = o
+            e.RenderStepped:Wait()
+            n.CFrame = g
+        end
+    else
+        B()
+        if f then
+            n.CFrame = f
+            f = nil
+        end
+        if g then
+            n.CFrame = g
+            g = nil
+        end
+    end
+end
+
+e.Heartbeat:Connect(j)
+
+local p
+p = hookmetamethod(game, "__index", newcclosure(function(q, r)
+    if not checkcaller() and r == "CFrame" and d.Character and d.Character:FindFirstChild("HumanoidRootPart") and d.Character:FindFirstChild("Humanoid") and d.Character.Humanoid.Health > 0 and q == d.Character.HumanoidRootPart then
+        if b and f then
+            return f
+        elseif (h or i) and g then
+            return g
+        end
+    end
+    return p(q, r)
+end))
+
+a:Toggle({
+    Name = "Destroy Cheaters",
+    Default = false,
+    Callback = function(s)
+        b = s
+        if not s and f and d.Character and d.Character:FindFirstChild("HumanoidRootPart") then
+            d.Character.HumanoidRootPart.CFrame = f
+            f = nil
+        end
+        if s and not t then
+            v(d.Character and d.Character.HumanoidRootPart and d.Character.HumanoidRootPart.CFrame or c(0, 0, 0))
+        end
+    end
+})
+
+a:Toggle({
+    Name = "Void Spam",
+    Default = false,
+    Callback = function(s)
+        h = s
+        if not s and g and d.Character and d.Character:FindFirstChild("HumanoidRootPart") then
+            d.Character.HumanoidRootPart.CFrame = g
+            g = nil
+        end
+        if s and not t then
+            v(d.Character and d.Character.HumanoidRootPart and d.Character.HumanoidRootPart.CFrame or c(0, 0, 0))
+        end
+    end
+})
+
+a:Toggle({
+    Name = "Void Hide",
+    Default = false,
+    Callback = function(s)
+        i = s
+        if not s and g and d.Character and d.Character:FindFirstChild("HumanoidRootPart") then
+            d.Character.HumanoidRootPart.CFrame = g
+            g = nil
+        end
+        if s and not t then
+            v(d.Character and d.Character.HumanoidRootPart and d.Character.HumanoidRootPart.CFrame or c(0, 0, 0))
+        end
+    end
+})
+local b = game:GetService("RunService")
+local c = game:GetService("Players").LocalPlayer
+local d = {}
+_G.i = false
+_G.k = false
+_G.l = false
+local j = false
+
+c.Character.Humanoid.Running:Connect(function(m)
+    j = m > 0
+end)
+
+b.RenderStepped:Connect(function()
+    if not _G.i then return end
+    local e = c.Character
+    if not e then return end
+    local f = e:FindFirstChildOfClass("Tool")
+    if not f then return end
+    if f:FindFirstChild("GunScript") then
+        for _, g in ipairs(getconnections(f.Activated)) do
+            local h = g.Function
+            if h then
+                local i = debug.getinfo(h)
+                for n = 1, i.nups do
+                    local o = debug.getupvalue(h, n)
+                    if type(o) == "number" then
+                        if not d[n] then d[n] = o end
+                        debug.setupvalue(h, n, _G.i and -math.huge or d[n])
+                    end
+                end
+            end
+        end
+    end
+end)
+
+b.Heartbeat:Connect(function()
+    if _G.i then
+        local e = c.Character
+        if e then
+            local f = e:FindFirstChildWhichIsA("Tool")
+            if f then
+                local g = f:FindFirstChild("Ammo")
+                local h = f:FindFirstChild("MaxAmmo")
+                if g and g:IsA("IntValue") then g.Value = 999 end
+                if h and h:IsA("IntValue") then h.Value = 999 end
+            end
+        end
+    end
+    if _G.l then
+        local e = c.Character
+        if e then
+            local f = e:FindFirstChildWhichIsA("Tool")
+            if f then
+                f:Activate()
+            end
+        end
+    end
+    if _G.k and not j then
+        local e = c.Character
+        if e then
+            local n = e.HumanoidRootPart
+            local o = e:FindFirstChild("Humanoid")
+            if n and o and o.Health > 0 then
+                n.CFrame = n.CFrame * CFrame.Angles(0, math.rad(0.5), 0)
+                local p = n.Velocity
+                n.Velocity = Vector3.new(0, -16384, 0)
+                b.RenderStepped:Wait()
+                n.Velocity = p
+            end
+        end
+    end
+end)
+
+b.Stepped:Connect(function()
+    if not _G.k or not j then return end
+    local e = c.Character
+    if not e then return end
+    local n = e.HumanoidRootPart
+    local o = e:FindFirstChild("Humanoid")
+    if not n or not o or o.Health <= 0 then return end
+    local p = n.AssemblyLinearVelocity
+    n.AssemblyLinearVelocity = Vector3.new(math.random(-2000, 6000), math.random(-13000, 3000), math.random(-6000, 2000))
+    b.RenderStepped:Wait()
+    n.AssemblyLinearVelocity = p
+end)
+
+a:Toggle({
+    Name = "RapidFire + InfAmmo",
+    Default = false,
+    Callback = function(q)
+        _G.i = q
+        if not q then
+            local e = c.Character
+            if e then
+                local f = e:FindFirstChildOfClass("Tool")
+                if f and f:FindFirstChild("GunScript") then
+                    for _, g in ipairs(getconnections(f.Activated)) do
+                        local h = g.Function
+                        if h then
+                            local i = debug.getinfo(h)
+                            for n = 1, i.nups do
+                                if d[n] then
+                                    debug.setupvalue(h, n, d[n])
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+})
+
+a:Toggle({
+    Name = "Walkable Desync",
+    Default = false,
+    Callback = function(q)
+        _G.k = q
+    end
+})
+
+a:Toggle({
+    Name = "Autoshoot",
+    Default = false,
+    Callback = function(q)
+        _G.l = q
+    end
+})
+local Workspace = game:GetService("Workspace")
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local UserInputService = game:GetService("UserInputService")
+local Camera = Workspace.CurrentCamera
+local antiVoidEnabled = false
+local antiVoidHeight = -9e9
+local antiVoidDefaultHeight = -500
+local flyEnabled = false
+local flySpeed = 50
+local isFlying = false
+local antiLockEnabled = false
+local antiLockType = "Zero"
+local jumpBreakEnabled = false
+local networkDesyncEnabled = false
+local bulletTPEnabled = false
+local strafeEnabled = false
+local strafeType = "Orbit"
+local strafeSpeed = 1
+local strafeDistance = 10
+local strafeHeight = 2
+local strafeRandomAmount = 10
+
+RunService.Heartbeat:Connect(function()
+    if antiVoidEnabled then
+        if LocalPlayer.Character then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                Workspace.FallenPartsDestroyHeight = antiVoidHeight
+            end
+        end
+    else
+        Workspace.FallenPartsDestroyHeight = antiVoidDefaultHeight
+    end
+end)
+
+local function toggleFly(state)
+    isFlying = state
+    if LocalPlayer.Character then
+        if LocalPlayer.Character:FindFirstChild("Humanoid") then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local humanoid = LocalPlayer.Character.Humanoid
+                local rootPart = LocalPlayer.Character.HumanoidRootPart
+                if state then
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics, false)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, false)
+                    humanoid:ChangeState(Enum.HumanoidStateType.Swimming)
+                    LocalPlayer.Character.Animate.Disabled = true
+                    for _, v in pairs(humanoid:GetPlayingAnimationTracks()) do
+                        v:AdjustSpeed(0)
+                    end
+                    local partName = (humanoid.RigType == Enum.HumanoidRigType.R6) and "Torso" or "UpperTorso"
+                    local targetPart = LocalPlayer.Character:FindFirstChild(partName)
+                    if targetPart then
+                        local bodyGyro = Instance.new("BodyGyro", targetPart)
+                        bodyGyro.P = 9e4
+                        bodyGyro.MaxTorque = Vector3.new(9e9, 9e9, 9e9)
+                        bodyGyro.CFrame = targetPart.CFrame
+                        local bodyVelocity = Instance.new("BodyVelocity", targetPart)
+                        bodyVelocity.MaxForce = Vector3.new(9e9, 9e9, 9e9)
+                        bodyVelocity.Velocity = Vector3.new(0, 0.1, 0)
+                        humanoid.PlatformStand = true
+                        getfenv().bodyGyro = bodyGyro
+                        getfenv().bodyVelocity = bodyVelocity
+                    end
+                else
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Climbing, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Flying, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Freefall, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.GettingUp, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Jumping, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Landed, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Physics, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.PlatformStanding, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Running, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.RunningNoPhysics, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Seated, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.StrafingNoPhysics, true)
+                    humanoid:SetStateEnabled(Enum.HumanoidStateType.Swimming, true)
+                    humanoid:ChangeState(Enum.HumanoidStateType.RunningNoPhysics)
+                    LocalPlayer.Character.Animate.Disabled = false
+                    if getfenv().bodyGyro then getfenv().bodyGyro:Destroy() end
+                    if getfenv().bodyVelocity then getfenv().bodyVelocity:Destroy() end
+                    humanoid.PlatformStand = false
+                end
+            end
+        end
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if flyEnabled then
+        if isFlying then
+            if LocalPlayer.Character then
+                if LocalPlayer.Character:FindFirstChild("Humanoid") then
+                    if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        local humanoid = LocalPlayer.Character.Humanoid
+                        local partName = (humanoid.RigType == Enum.HumanoidRigType.R6) and "Torso" or "UpperTorso"
+                        local targetPart = LocalPlayer.Character:FindFirstChild(partName)
+                        if targetPart then
+                            if getfenv().bodyGyro then
+                                if getfenv().bodyVelocity then
+                                    local ctrl = {f = 0, b = 0, l = 0, r = 0}
+                                    local lastctrl = {f = 0, b = 0, l = 0, r = 0}
+                                    local speed = flySpeed
+                                    if UserInputService:IsKeyDown(Enum.KeyCode.W) then ctrl.f = 1 end
+                                    if UserInputService:IsKeyDown(Enum.KeyCode.S) then ctrl.b = -1 end
+                                    if UserInputService:IsKeyDown(Enum.KeyCode.A) then ctrl.l = -1 end
+                                    if UserInputService:IsKeyDown(Enum.KeyCode.D) then ctrl.r = 1 end
+                                    if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                                        speed = speed + 0.5 + (speed / flySpeed)
+                                        if speed > flySpeed then speed = flySpeed end
+                                    elseif speed ~= 0 then
+                                        speed = speed - 1
+                                        if speed < 0 then speed = 0 end
+                                    end
+                                    if (ctrl.l + ctrl.r) ~= 0 or (ctrl.f + ctrl.b) ~= 0 then
+                                        getfenv().bodyVelocity.Velocity = ((Camera.CFrame.lookVector * (ctrl.f + ctrl.b)) + ((Camera.CFrame * CFrame.new(ctrl.l + ctrl.r, (ctrl.f + ctrl.b) * 0.2, 0).p) - Camera.CFrame.p)) * speed
+                                        lastctrl = {f = ctrl.f, b = ctrl.b, l = ctrl.l, r = ctrl.r}
+                                    elseif (ctrl.l + ctrl.r) == 0 and (ctrl.f + ctrl.b) == 0 and speed ~= 0 then
+                                        getfenv().bodyVelocity.Velocity = ((Camera.CFrame.lookVector * (lastctrl.f + lastctrl.b)) + ((Camera.CFrame * CFrame.new(lastctrl.l + lastctrl.r, (lastctrl.f + lastctrl.b) * 0.2, 0).p) - Camera.CFrame.p)) * speed
+                                    else
+                                        getfenv().bodyVelocity.Velocity = Vector3.new(0, 0, 0)
+                                    end
+                                    getfenv().bodyGyro.CFrame = Camera.CFrame * CFrame.Angles(-math.rad((ctrl.f + ctrl.b) * 50 * speed / flySpeed), 0, 0)
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function(char)
+    wait(0.7)
+    if char then
+        char:WaitForChild("Humanoid").PlatformStand = false
+        char.Animate.Disabled = false
+        if flyEnabled then
+            toggleFly(true)
+        end
+    end
+end)
+
+local Sleeping = false
+RunService.Heartbeat:Connect(function()
+    if antiLockEnabled then
+        if LocalPlayer.Character then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                local hrp = LocalPlayer.Character.HumanoidRootPart
+                local originalVelocity = hrp.Velocity
+                local Direction = Vector3.new(0, 0, -1)
+                if antiLockType == "Behind" then
+                    Direction = Vector3.new(0, 0, -1)
+                elseif antiLockType == "Down" then
+                    Direction = Vector3.new(0, -1, 0)
+                elseif antiLockType == "Forward" then
+                    Direction = Vector3.new(0, 0, 1)
+                elseif antiLockType == "Left" then
+                    Direction = Vector3.new(-1, 0, 0)
+                elseif antiLockType == "One" then
+                    Direction = Vector3.new(1, 1, 1)
+                elseif antiLockType == "Right" then
+                    Direction = Vector3.new(1, 0, 0)
+                elseif antiLockType == "Up" then
+                    Direction = Vector3.new(0, 1, 0)
+                elseif antiLockType == "Zero" then
+                    Direction = Vector3.new(0, 0, 0)
+                elseif antiLockType == "Shake" then
+                    hrp.Velocity = Vector3.new(math.random(-10000, 10000), math.random(-10000, 10000), math.random(-10000, 10000))
+                    RunService.RenderStepped:Wait()
+                    hrp.Velocity = originalVelocity
+                    return
+                elseif antiLockType == "Multiply" then
+                    hrp.Velocity = originalVelocity * 2
+                    RunService.RenderStepped:Wait()
+                    hrp.Velocity = originalVelocity
+                    return
+                end
+                hrp.Velocity = Direction * (2^16)
+                RunService.RenderStepped:Wait()
+                hrp.Velocity = originalVelocity
+            end
+        end
+    end
+end)
+
+RunService.PostSimulation:Connect(function()
+    if LocalPlayer.Character then
+        if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if networkDesyncEnabled then
+                Sleeping = not Sleeping
+                setfflag("S2PhysicsSenderRate", 2)
+                sethiddenproperty(LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", Sleeping)
+            else
+                Sleeping = false
+                setfflag("S2PhysicsSenderRate", 13)
+                sethiddenproperty(LocalPlayer.Character.HumanoidRootPart, "NetworkIsSleeping", Sleeping)
+            end
+        end
+    end
+end)
+
+local LastCFrame
+local HideEnabled = false
+RunService.Heartbeat:Connect(function()
+    if LocalPlayer.Character then
+        if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local HumanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+            local Offset = HumanoidRootPart.CFrame * CFrame.new(9e9, 0, 9e9)
+            if HideEnabled then
+                LastCFrame = HumanoidRootPart.CFrame
+                HumanoidRootPart.CFrame = Offset
+                RunService.RenderStepped:Wait()
+                HumanoidRootPart.CFrame = LastCFrame
+            end
+        end
+    end
+end)
+
+local HookMethod
+HookMethod = hookmetamethod(game, "__index", function(self, key)
+    if not checkcaller() then
+        if key == "CFrame" then
+            if HideEnabled then
+                if LocalPlayer.Character then
+                    if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                        if LocalPlayer.Character:FindFirstChild("Humanoid") then
+                            if LocalPlayer.Character.Humanoid.Health > 0 then
+                                if self == LocalPlayer.Character.HumanoidRootPart then
+                                    if LastCFrame then
+                                        return LastCFrame
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return HookMethod(self, key)
+end)
+
+local function cframe_to_offset(origin, target)
+    local actual_origin = origin * CFrame.new(0, -1, 0, 1, 0, 0, 0, 0, 1, 0, -1, 0)
+    return actual_origin:ToObjectSpace(target):Inverse()
+end
+
+local function bool_at_tp_tool(tool)
+    local old_grip = tool.Grip
+    if Plr then
+        if Plr.Character then
+            if Plr.Character:FindFirstChild("HumanoidRootPart") then
+                tool.Parent = LocalPlayer.Backpack
+                LocalPlayer.Character.RightHand.Anchored = false
+                tool.Grip = cframe_to_offset(LocalPlayer.Character.RightHand.CFrame, Plr.Character.HumanoidRootPart.CFrame)
+                LocalPlayer.Character.RightHand.Anchored = true
+                tool.Parent = LocalPlayer.Character
+                RunService.RenderStepped:Wait()
+                tool.Parent = LocalPlayer.Backpack
+                LocalPlayer.Character.RightHand.Anchored = false
+                tool.Grip = old_grip
+                tool.Parent = LocalPlayer.Character
+            end
+        end
+    end
+end
+
+local connection
+local function tool_activated(character)
+    if character then
+        character.ChildAdded:Connect(function(child)
+            if bulletTPEnabled then
+                if child:IsA("Tool") then
+                    connection = child.Activated:Connect(function()
+                        bool_at_tp_tool(child)
+                    end)
+                    if getconnections then
+                        for _, con in ipairs(getconnections(child:GetPropertyChangedSignal("Grip"))) do
+                            if con.Disable then
+                                con:Disable()
+                            end
+                        end
+                    end
+                end
+            end
+        end)
+        character.ChildRemoved:Connect(function(child)
+            if child:IsA("Tool") then
+                if connection then
+                    connection:Disconnect()
+                end
+            end
+        end)
+    end
+end
+
+LocalPlayer.CharacterAdded:Connect(function(new_character)
+    tool_activated(new_character)
+end)
+
+if LocalPlayer.Character then
+    tool_activated(LocalPlayer.Character)
+end
+
+LocalPlayer.Character.ChildAdded:Connect(function(tool)
+    if tool:IsA("Tool") and getconnections then
+        for _, con in ipairs(getconnections(tool:GetPropertyChangedSignal("Grip"))) do
+            if con.Disable then
+                con:Disable()
+            end
+        end
+    end
+end)
+
+local function getStrafeCFrame(targetPosition)
+    if not strafeEnabled then
+        if LocalPlayer.Character then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                return LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+        end
+    end
+    if not Plr then
+        if LocalPlayer.Character then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                return LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+        end
+    end
+    if not Plr.Character then
+        if LocalPlayer.Character then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                return LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+        end
+    end
+    if not Plr.Character:FindFirstChild("HumanoidRootPart") then
+        if LocalPlayer.Character then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                return LocalPlayer.Character.HumanoidRootPart.CFrame
+            end
+        end
+    end
+    local targetPosition = Plr.Character.HumanoidRootPart.Position
+    if strafeType == "Random" then
+        return CFrame.new(
+            targetPosition + Vector3.new(
+                math.random(-strafeRandomAmount, strafeRandomAmount),
+                math.random(0, strafeRandomAmount),
+                math.random(-strafeRandomAmount, strafeRandomAmount)
+            )
+        ) * CFrame.Angles(
+            math.rad(math.random(0, 360)),
+            math.rad(math.random(0, 360)),
+            math.rad(math.random(0, 360))
+        )
+    elseif strafeType == "Orbit" then
+        local CurrentTime = tick()
+        return CFrame.new(targetPosition) *
+            CFrame.Angles(0, 2 * math.pi * CurrentTime * strafeSpeed % (2 * math.pi), 0) *
+            CFrame.new(0, strafeHeight, strafeDistance)
+    elseif strafeType == "Spiral" then
+        local CurrentTime = tick()
+        local angle = 2 * math.pi * CurrentTime * strafeSpeed % (2 * math.pi)
+        local spiralRadius = strafeDistance + math.sin(CurrentTime) * strafeRandomAmount
+        return CFrame.new(targetPosition) *
+            CFrame.Angles(0, angle, 0) *
+            CFrame.new(spiralRadius, strafeHeight, 0)
+    elseif strafeType == "Spherical" then
+        local CurrentTime = tick()
+        local radius = strafeDistance
+        local sphericalX = radius * math.sin(CurrentTime) * math.cos(CurrentTime * strafeSpeed)
+        local sphericalY = radius * math.sin(CurrentTime) * math.sin(CurrentTime * strafeSpeed)
+        local sphericalZ = radius * math.cos(CurrentTime)
+        return CFrame.new(targetPosition + Vector3.new(sphericalX, sphericalY, sphericalZ))
+    elseif strafeType == "Attach" then
+        return CFrame.new(targetPosition)
+    end
+    if LocalPlayer.Character then
+        if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            return LocalPlayer.Character.HumanoidRootPart.CFrame
+        end
+    end
+end
+
+RunService.Heartbeat:Connect(function()
+    if strafeEnabled then
+        if LocalPlayer.Character then
+            if LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+                if Plr then
+                    if Plr.Character then
+                        if Plr.Character:FindFirstChild("HumanoidRootPart") then
+                            local HumanoidRootPart = LocalPlayer.Character.HumanoidRootPart
+                            HumanoidRootPart.CFrame = getStrafeCFrame(Plr.Character.HumanoidRootPart.Position)
+                        end
+                    end
+                end
+            end
+        end
+    end
+end)
+
+local RageSection = SubPage6:Section({Name = "Misc Rage", Side = "Left"})
+RageSection:Toggle({
+    Name = "Anti Void",
+    Default = false,
+    Callback = function(state)
+        if state then
+            antiVoidEnabled = true
+        else
+            antiVoidEnabled = false
+        end
+    end
+})
+RageSection:Slider({
+    Name = "Anti Void Height",
+    Min = -10000,
+    Max = 0,
+    Default = -9e9,
+    Callback = function(value)
+        antiVoidHeight = value
+    end
+})
+RageSection:Toggle({
+    Name = "Fly",
+    Default = false,
+    Callback = function(state)
+        if state then
+            flyEnabled = true
+            toggleFly(true)
+        else
+            flyEnabled = false
+            toggleFly(false)
+        end
+    end
+})
+RageSection:Slider({
+    Name = "Fly Speed",
+    Min = 10,
+    Max = 100,
+    Default = 50,
+    Callback = function(value)
+        flySpeed = value
+    end
+})
+RageSection:Toggle({
+    Name = "Bullet Tp",
+    Default = false,
+    Callback = function(state)
+        if state then
+            bulletTPEnabled = true
+        else
+            bulletTPEnabled = false
+        end
+    end
+})
+local PredictionBreakerSection = SubPage6:Section({Name = "Prediction Breaker", Side = "Left"})
+PredictionBreakerSection:Toggle({
+    Name = "Jump Prediction",
+    Default = false,
+    Callback = function(state)
+        if state then
+            jumpBreakEnabled = true
+        else
+            jumpBreakEnabled = false
+        end
+    end
+})
+PredictionBreakerSection:Toggle({
+    Name = "Enable Anti Lock",
+    Default = false,
+    Callback = function(state)
+        if state then
+            antiLockEnabled = true
+        else
+            antiLockEnabled = false
+        end
+    end
+})
+PredictionBreakerSection:Toggle({
+    Name = "Network Desync",
+    Default = false,
+    Callback = function(state)
+        if state then
+            networkDesyncEnabled = true
+        else
+            networkDesyncEnabled = false
+        end
+    end
+})
+PredictionBreakerSection:List({
+    Name = "Anti Lock Type",
+    Options = {"Multiply", "Shake", "Behind", "Down", "Forward", "Left", "One", "Right", "Up", "Zero"},
+    Default = "Zero",
+    Callback = function(value)
+        antiLockType = value
+    end
+})
+local StrafeSection = SubPage6:Section({Name = "Strafe", Side = "Left"})
+StrafeSection:Toggle({
+    Name = "Strafe",
+    Default = false,
+    Callback = function(state)
+        if state then
+            strafeEnabled = true
+        else
+            strafeEnabled = false
+        end
+    end
+})
+StrafeSection:List({
+    Name = "Strafe Type",
+    Options = {"Random", "Orbit", "Spiral", "Spherical", "Attach"},
+    Default = "Orbit",
+    Callback = function(value)
+        strafeType = value
+    end
+})
+StrafeSection:Slider({
+    Name = "Strafe Speed",
+    Min = 1,
+    Max = 100,
+    Default = 1,
+    Callback = function(value)
+        strafeSpeed = value
+    end
+})
+StrafeSection:Slider({
+    Name = "Strafe Distance",
+    Min = 5,
+    Max = 100,
+    Default = 10,
+    Callback = function(value)
+        strafeDistance = value
+    end
+})
+StrafeSection:Slider({
+    Name = "Strafe Height",
+    Min = 0,
+    Max = 100,
+    Default = 2,
+    Callback = function(value)
+        strafeHeight = value
+    end
+})
+StrafeSection:Slider({
+    Name = "Random Amount",
+    Min = 0,
+    Max = 100,
+    Default = 10,
+    Callback = function(value)
+        strafeRandomAmount = value
+    end
+})
+do
+    local CFG = SettingsUI:Section({Name = "Config", Zindex = 2})
+    local ConfigList = CFG:List({Name = "Config", Flag = "SettingConfigurationList", Options = {}})
+    CFG:Textbox({Flag = "SettingsConfigurationName", Name = "Config Name"})
+    local CurrentList = {}
+    local function EnsureConfigsDirectoryExists()
+        if not isfolder("Ratz") then makefolder("Ratz") end
+    end
+    local function UpdateConfigList()
+        EnsureConfigsDirectoryExists()
+        local List = {}
+        for _, file in ipairs(listfiles("Ratz")) do
+            local FileName = file:gsub("Ratz/", ""):gsub("%.cfg$", "")
+            table.insert(List, FileName)
+        end
+        if #List ~= #CurrentList or table.concat(List) ~= table.concat(CurrentList) then
+            CurrentList = List
+            ConfigList.Options = CurrentList
+            if ConfigList.Refresh then ConfigList:Refresh(CurrentList) end
+        end
+    end
+    CFG:Button({Name = "Create", Callback = function()
+        EnsureConfigsDirectoryExists()
+        local ConfigName = Flags.SettingsConfigurationName
+        if ConfigName and ConfigName ~= "" then
+            local filePath = "Ratz/" .. ConfigName .. ".cfg"
+            if not isfile(filePath) then
+                writefile(filePath, "")
+                UpdateConfigList()
+            else
+                Library:Notification("Config file already exists: " .. filePath)
+            end
+        else
+            Library:Notification("Config name cannot be empty.")
+        end
+    end})
+    CFG:Button({Name = "Save", Callback = function()
+        local SelectedConfig = Flags.SettingConfigurationList
+        if SelectedConfig then
+            local filePath = "Ratz/" .. SelectedConfig .. ".cfg"
+            writefile(filePath, Library:GetConfig())
+        end
+    end})
+    CFG:Button({Name = "Load", Callback = function()
+        local SelectedConfig = Flags.SettingConfigurationList
+        if SelectedConfig then
+            local filePath = "Ratz/" .. SelectedConfig .. ".cfg"
+            if isfile(filePath) then
+                local success, err = pcall(function() Library:LoadConfig(readfile(filePath)) end)
+                if not success then print("Error loading config: " .. err) end
+            else
+                print("error cfg doesnt exist nigga.")
+            end
+        end
+    end})
+    CFG:Button({Name = "Delete", Callback = function()
+        local SelectedConfig = Flags.SettingConfigurationList
+        if SelectedConfig then
+            local filePath = "Ratz/" .. SelectedConfig .. ".cfg"
+            if isfile(filePath) then
+                delfile(filePath)
+                UpdateConfigList()
+            else
+                print("error cfg doesnt exist.")
+            end
+        end
+    end})
+    CFG:Button({Name = "Refresh", Callback = UpdateConfigList})
+    CFG:Keybind({Name = "Menu Key", Flag = "MenuKey", UseKey = true, Default = Enum.KeyCode.End, Callback = function(State) Library.UIKey = State end})
+    CFG:Colorpicker({Name = "Menu Accent", Flag = "MenuAccent", Default = Library.Accent, Callback = function(State) Library:ChangeAccent(State) end})
+    CFG:Toggle({Name = "Show Watermark", Flag = "Watermark", Callback = function(State) Watermark:SetVisible(State) end})
+    CFG:Textbox({
+        Flag = "WatermarkText",
+        Name = "Watermark Text",
+        State = string.format([[$$ osamason $$ |
+%s | %s | %s | Christmas Cheer | Jingle Bells |
+Snowflakes | Holiday Vibes |
+gyatt]], plyaha, dick2, christmasCharacter),
+        Callback = function(State) Watermark:UpdateText(State) end
+    })
+
+    local idiotdelay = 0
+    local HoodC = SettingsUI:Section({Name = "Hc", Side = "Right", Zindex = 2})
+    HoodC:Toggle({Name = "Shoot rate", Callback = function(a)
+        Noobidiot = a
+        while Noobidiot do
+            local player = game:GetService("Players").LocalPlayer
+            local character = player.Character
+            if character then
+                for _, tool in pairs(character:GetChildren()) do
+                    if tool:IsA("Tool") and tool:FindFirstChild("GunData") then
+                        local gunData = tool:FindFirstChild("GunData")
+                        if gunData and gunData:IsA("ModuleScript") then
+                            local gunDataContent = require(gunData)
+                            if gunDataContent.cooldown and gunDataContent.slowdown_time then
+                                gunDataContent.cooldown = idiotdelay
+                                gunDataContent.slowdown_time = idiotdelay
+                            end
+                        end
+                    end
+                end
+            end
+            task.wait(1)
+        end
+    end})
+    HoodC:Textbox({Name = "Shoot Delay", Default = tostring(idiotdelay), Callback = function(a) idiotdelay = tonumber(a) or 0.0001 end})
+end
+
+local target_health = nil
+
+local function updatetarget_health()
+    if not (coolboy.Target.main.enabled and Plr) then return end
+    local targetCharacter = Plr.Character
+    if not targetCharacter then return end
+
+    local humanoid = targetCharacter:FindFirstChildOfClass("Humanoid")
+    if humanoid then
+        local currentHealth = humanoid.Health
+        if type(target_health) == "number" and currentHealth < target_health then
+        end
+        target_health = currentHealth
+    end
+end
+
+RunService.RenderStepped:Connect(function()
+    if coolboy.Target.main.enabled and Plr and Highlight then
+        local targetCharacter = Plr.Character
+        local targHighlight = CoreGui:FindFirstChild("TargHighlight")
+        if not targHighlight then
+            targHighlight = Instance.new("Highlight", CoreGui)
+            targHighlight.Name = "TargHighlight"
+        end
+
+        if targetCharacter then
+            targHighlight.FillColor = coolboy.TargetAimbot.HighlightColor1
+            targHighlight.OutlineColor = coolboy.TargetAimbot.HighlightColor2
+            targHighlight.FillTransparency = 0.5
+            targHighlight.OutlineTransparency = 0
+            targHighlight.Adornee = targetCharacter
+            targHighlight.Enabled = true
+        else
+            targHighlight.Enabled = false
+        end
+    else
+        local targHighlight = CoreGui:FindFirstChild("TargHighlight")
+        if targHighlight then
+            targHighlight.Enabled = false
+        end
+    end
+end)
+
+local Sigmaballs = Instance.new("ScreenGui", CoreGui)
+Sigmaballs.Name = "Sigmaballs"
+Sigmaballs.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+Sigmaballs.ResetOnSpawn = false
+
+local FOV_Circle = Instance.new("Frame", Sigmaballs)
+FOV_Circle.Name = "FOVCircle"
+FOV_Circle.BackgroundTransparency = 1
+FOV_Circle.Size = UDim2.fromOffset(coolboy.SilentAim.FOVRadius * 2, coolboy.SilentAim.FOVRadius * 2)
+FOV_Circle.Position = UDim2.new(0.5, -coolboy.SilentAim.FOVRadius, 0.5, -coolboy.SilentAim.FOVRadius)
+FOV_Circle.Visible = false
+local FOV_Stroke = Instance.new("UIStroke", FOV_Circle)
+FOV_Stroke.Color = coolboy.SilentAim.FOVColor
+FOV_Stroke.Thickness = 1
+local FOV_Corner = Instance.new("UICorner", FOV_Circle)
+FOV_Corner.CornerRadius = UDim.new(1, 0)
+
+local dot = Instance.new("Frame", Sigmaballs)
+dot.Name = "PredictionDot"
+dot.Size = UDim2.new(0, 5, 0, 5)
+dot.AnchorPoint = Vector2.new(0.5, 0.5)
+dot.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
+dot.BorderSizePixel = 0
+dot.Visible = false
+local dotCorner = Instance.new("UICorner", dot)
+dotCorner.CornerRadius = UDim.new(1, 0)
+
+local Button = Instance.new("TextButton", Sigmaballs)
+Button.Name = "LockButton"
+Button.Active = true
+Button.Draggable = true
+Button.BackgroundColor3 = Color3.fromRGB(28, 28, 48)
+Button.BorderSizePixel = 0
+Button.Size = UDim2.new(0, 150, 0, 50)
+Button.Position = UDim2.new(0, 5, 0, 5)
+Button.Font = Enum.Font.ArialBold
+Button.Text = "Lock: " .. "<font color='rgb(255, 0, 0)'>OFF</font>"
+Button.TextColor3 = Color3.fromRGB(255, 255, 255)
+Button.TextSize = 25
+Button.RichText = true
+Button.TextStrokeTransparency = 0.5
+local UICorner_1 = Instance.new("UICorner", Button)
+UICorner_1.CornerRadius = UDim.new(0, 8)
+local UIStroke_1 = Instance.new("UIStroke", Button)
+UIStroke_1.Thickness = 2
+UIStroke_1.Color = Color3.fromRGB(16, 16, 32)
+local UIStroke_1_Border = Instance.new("UIStroke", Button)
+UIStroke_1_Border.Thickness = 3
+UIStroke_1_Border.Color = Color3.fromRGB(16, 16, 32)
+UIStroke_1_Border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local bottun = Instance.new("TextButton", Sigmaballs)
+bottun.Name = "UIToggleButton"
+bottun.Active = true
+bottun.Draggable = true
+bottun.BackgroundColor3 = Color3.fromRGB(28, 28, 48)
+bottun.BorderSizePixel = 0
+bottun.Size = UDim2.new(0, 150, 0, 50)
+bottun.Position = UDim2.new(0, 5, 0, 60)
+bottun.Font = Enum.Font.ArialBold
+bottun.Text = "UI: " .. "<font color='rgb(0, 255, 0)'>ON</font>"
+bottun.TextColor3 = Color3.fromRGB(255, 255, 255)
+bottun.TextSize = 25
+bottun.RichText = true
+bottun.TextStrokeTransparency = 0.5
+local UICorner_2 = Instance.new("UICorner", bottun)
+UICorner_2.CornerRadius = UDim.new(0, 8)
+local UIStroke_2 = Instance.new("UIStroke", bottun)
+UIStroke_2.Thickness = 2
+UIStroke_2.Color = Color3.fromRGB(16, 16, 32)
+local UIStroke_2_Border = Instance.new("UIStroke", bottun)
+UIStroke_2_Border.Thickness = 3
+UIStroke_2_Border.Color = Color3.fromRGB(16, 16, 32)
+UIStroke_2_Border.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+local Open = true
+bottun.MouseButton1Click:Connect(function()
+    Open = not Open
+    Library:SetOpen(Open)
+    bottun.Text = "UI: " .. (Open and "<font color='rgb(0, 255, 0)'>ON</font>" or "<font color='rgb(255, 0, 0)'>OFF</font>")
+end)
+
+local function SilentAim_Predict(targetPart)
+    if not targetPart then return nil end
+    local velocity = targetPart.Velocity or Vector3.zero
+    return targetPart.Position + Vector3.new(
+        velocity.X * coolboy.SilentAim.PredictionFactorX,
+        velocity.Y * coolboy.SilentAim.PredictionFactorY,
+        velocity.Z * coolboy.SilentAim.PredictionFactorZ
+    )
+end
+
+local function SilentAim_ClosestPlayer()
+    local closestPlayer, closestDistance = nil, math.huge
+    for _, player in ipairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild(coolboy.SilentAim.TargetPart) then
+            local targetPart = player.Character[coolboy.SilentAim.TargetPart]
+            local predictedPosition = SilentAim_Predict(targetPart)
+            if not predictedPosition then continue end
+            local screenPos, onScreen = Camera:WorldToViewportPoint(predictedPosition)
+            if onScreen then
+                local screenCenter = Camera.ViewportSize / 2
+                local distance = (Vector2.new(screenPos.X, screenPos.Y) - screenCenter).Magnitude
+                if distance < coolboy.SilentAim.FOVRadius and distance < closestDistance then
+                    closestPlayer = targetPart
+                    closestDistance = distance
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+local function SilentAim_GetTarget()
+    if coolboy.SilentAim.StickyTarget then
+        if coolboy.SilentAim.StickyTarget.Parent and coolboy.SilentAim.StickyTarget.Parent:FindFirstChild(coolboy.SilentAim.TargetPart) then
+            return coolboy.SilentAim.StickyTarget
+        else
+            coolboy.SilentAim.StickyTarget = nil
+        end
+    end
+    return SilentAim_ClosestPlayer()
+end
+
+function SigmaOhioPlayer()
+    local closestPlayer, shortestDistance = nil, math.huge
+    local CC = Workspace.CurrentCamera
+    local viewportSize = CC.ViewportSize
+    local screenCenter = Vector2.new(viewportSize.X / 2, viewportSize.Y / 2)
+    for _, v in ipairs(Players:GetPlayers()) do
+        if v ~= LocalPlayer and v.Character and v.Character:FindFirstChild("HumanoidRootPart") and v.Character:FindFirstChildOfClass("Humanoid") and v.Character.Humanoid.Health > 0 then
+            local pos, onScreen = CC:WorldToViewportPoint(v.Character.PrimaryPart.Position)
+            if onScreen then
+                local magnitude = (Vector2.new(pos.X, pos.Y) - screenCenter).Magnitude
+                if magnitude < shortestDistance then
+                    closestPlayer = v
+                    shortestDistance = magnitude
+                end
+            end
+        end
+    end
+    return closestPlayer
+end
+
+toggle_lock = function()
+    if coolboy.TargetAimbot.Enabled then
+        if coolboy.Target.main.enabled and Plr then
+            coolboy.Target.main.enabled = false
+            target_health = nil
+            Plr = nil
+            local localChar = LocalPlayer.Character
+            if localChar and localChar:FindFirstChildOfClass("Humanoid") then
+                Workspace.CurrentCamera.CameraSubject = localChar.Humanoid
+                if coolboy.TargetAimbot.LookAt then localChar.Humanoid.AutoRotate = true end
+            end
+            Button.Text = "Lock: " .. "<font color='rgb(255, 0, 0)'>OFF</font>"
+            Library:Notification("Untargeted", 2)
+        else
+            local closest = SigmaOhioPlayer()
+            if closest then
+                coolboy.Target.main.enabled = true
+                Plr = closest
+                local targetChar = Plr.Character
+                if targetChar and targetChar:FindFirstChildOfClass("Humanoid") then
+                    target_health = targetChar.Humanoid.Health
+                    Button.Text = "Lock: " .. "<font color='rgb(0, 255, 0)'>ON</font>"
+                    Library:Notification("Target Locked: " .. tostring(Plr.DisplayName), 2)
+                else
+                    coolboy.Target.main.enabled = false
+                    Plr = nil
+                end
+            end
+        end
+    end
+end
+
+Button.MouseButton1Click:Connect(toggle_lock)
+UserInputService.InputBegan:Connect(function(input, processed)
+    if not processed then
+        if input.KeyCode == Enum.KeyCode.DPadDown then
+            toggle_lock()
+        elseif input.KeyCode == coolboy.SilentAim.StickyKey then
+            if coolboy.SilentAim.StickyTarget then
+                coolboy.SilentAim.StickyTarget = nil
+            else
+                coolboy.SilentAim.StickyTarget = SilentAim_ClosestPlayer()
+            end
+        end
+    end
+end)
+
+utility.new_connection(RunService.RenderStepped, function()
+    if coolboy.SilentAim.Enabled and coolboy.SilentAim.ShowFOV then
+        FOV_Circle.Visible = true
+        FOV_Circle.Size = UDim2.fromOffset(coolboy.SilentAim.FOVRadius * 2, coolboy.SilentAim.FOVRadius * 2)
+        FOV_Stroke.Color = coolboy.SilentAim.FOVColor
+        local viewportSize = Camera.ViewportSize
+        FOV_Circle.Position = UDim2.new(0.5, -coolboy.SilentAim.FOVRadius, 0.5, -coolboy.SilentAim.FOVRadius)
+    else
+        FOV_Circle.Visible = false
+    end
+end)
+
+utility.new_connection(RunService.RenderStepped, function()
+    if coolboy.Target.main.enabled and coolboy.Target.main.dot_enabled and Plr and Plr.Character then
+        local aimPart = Plr.Character:FindFirstChild(coolboy.Target.main.aimpart)
+        local rootPart = Plr.Character:FindFirstChild("HumanoidRootPart")
+
+        if aimPart and rootPart then
+            local velocity = rootPart.Velocity
+            local futurePos = aimPart.Position + (velocity * coolboy.Target.main.prediction)
+            local screenPos, onScreen = Camera:WorldToViewportPoint(futurePos)
+
+            dot.Position = UDim2.fromOffset(screenPos.X, screenPos.Y)
+            dot.Visible = onScreen
+        else
+            dot.Visible = false
+        end
+    else
+        dot.Visible = false
+    end
+end)
+
+fogmaker()
+UpdateWorld()
+
+do
+    local desyncActive = false
+    local originalCFrame = CFrame.new()
+
+    RunService.RenderStepped:Connect(function()
+        if coolboy.cframetpdesync then
+            local desyncOffset = CFrame.new(
+                coolboy.customcframetpx,
+                coolboy.customcframetpy,
+                coolboy.customcframetpz
+            )
+            Camera.CFrame = Camera.CFrame * desyncOffset:Inverse()
+        end
+    end)
+
+    RunService.Heartbeat:Connect(function()
+        desyncActive = coolboy.cframetpdesync
+
+        local Character = LocalPlayer.Character
+        local HumanoidRootPart = Character and Character:FindFirstChild("HumanoidRootPart")
+
+        if desyncActive and HumanoidRootPart then
+            originalCFrame = HumanoidRootPart.CFrame
+
+            local desyncOffset = CFrame.new(
+                coolboy.customcframetpx,
+                coolboy.customcframetpy,
+                coolboy.customcframetpz
+            )
+            local desyncCFrame = originalCFrame * desyncOffset
+
+            HumanoidRootPart.CFrame = desyncCFrame
+
+            RunService.RenderStepped:Wait()
+
+            HumanoidRootPart.CFrame = originalCFrame
+        end
+    end)
+end
+
+repeat
+    game:GetService("RunService").RenderStepped:Wait()
+until game:IsLoaded()
+
+local gm = getrawmetatable(game)
+setreadonly(gm, false)
+local oldNamecall = gm.__namecall
+local oldIndex = gm.__index
+
+gm.__namecall = newcclosure(function(...)
+    local args = {...}
+    local method = getnamecallmethod()
+    if method == "FireServer"
+       and args[2] == "UpdateMousePos"
+       and typeof(args[3]) == "boolean"
+       and coolboy.TargetAimbot.LockType == "Namecall" then
+        local keepBool = args[3]
+        local pos
+        if coolboy.Target.main.enabled and Plr and Plr.Character then
+            local part = Plr.Character:FindFirstChild(coolboy.Target.main.aimpart)
+            local vel = Plr.Character:FindFirstChild("HumanoidRootPart")
+            if part and vel then
+                pos = part.Position + vel.Velocity * coolboy.Target.main.prediction + Vector3.new(0, coolboy.AimOffset or 0, 0)
+            end
+        elseif coolboy.SilentAim.Enabled then
+            local tar = SilentAim_GetTarget()
+            if tar then
+                local v = tar.Parent.HumanoidRootPart.Velocity
+                pos = tar.Position + Vector3.new(v.X * coolboy.SilentAim.PredictionFactorX, v.Y * coolboy.SilentAim.PredictionFactorY, v.Z * coolboy.SilentAim.PredictionFactorZ)
+            end
+        end
+        if pos then
+            return oldNamecall(args[1], "UpdateMousePos", keepBool, pos)
+        end
+    end
+    return oldNamecall(...)
+end)
+
+gm.__index = newcclosure(function(self, key)
+    if key == "Hit" and self == Mouse and coolboy.TargetAimbot.LockType == "Index" then
+        if coolboy.Target.main.enabled and Plr and Plr.Character then
+            local part = Plr.Character:FindFirstChild(coolboy.Target.main.aimpart)
+            local vel = Plr.Character:FindFirstChild("HumanoidRootPart")
+            if part and vel then
+                local predictedPos = part.Position + vel.Velocity * coolboy.Target.main.prediction + Vector3.new(0, coolboy.AimOffset or 0, 0)
+                return CFrame.new(predictedPos)
+            end
+        elseif coolboy.SilentAim.Enabled then
+            local tar = SilentAim_GetTarget()
+            if tar then
+                local v = tar.Parent.HumanoidRootPart.Velocity
+                local predictedPos = tar.Position + Vector3.new(v.X * coolboy.SilentAim.PredictionFactorX, v.Y * coolboy.SilentAim.PredictionFactorY, v.Z * coolboy.SilentAim.PredictionFactorZ)
+                return CFrame.new(predictedPos)
+            end
+        end
+    end
+    return oldIndex(self, key)
+end)
+
+setreadonly(gm, true)
